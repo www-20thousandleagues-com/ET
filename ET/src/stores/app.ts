@@ -90,17 +90,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const queryId = crypto.randomUUID();
 
-    // Try to save to Supabase (non-blocking if not configured)
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
+    // Save to Supabase in background (non-blocking)
+    supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        await supabase
+        supabase
           .from("queries")
-          .insert({ query_text: queryText, user_id: user.id, is_saved: false });
+          .insert({ query_text: queryText, user_id: user.id, is_saved: false })
+          .then(() => {});
       }
-    } catch {
-      // Continue even if Supabase isn't configured
-    }
+    }).catch(() => {});
 
     // Call n8n RAG pipeline
     try {
