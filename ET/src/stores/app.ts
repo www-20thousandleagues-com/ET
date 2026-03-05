@@ -3,6 +3,17 @@ import type { Source, QueryWithAnalysis, CitationWithArticle } from "@/types/dat
 import { supabase } from "@/lib/supabase";
 import { queryRagPipeline, type RagResponse } from "@/lib/api";
 
+// crypto.randomUUID() requires secure context (HTTPS). Fallback for HTTP.
+function generateId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 type RecentArticle = {
   id: string;
   title: string;
@@ -38,7 +49,7 @@ type AppState = {
 
 function mapRagResponseToAnalysis(rag: RagResponse): QueryWithAnalysis["analysis"] {
   return {
-    id: crypto.randomUUID(),
+    id: generateId(),
     query_id: rag.query_id,
     content: rag.analysis.content,
     confidence: rag.analysis.confidence,
@@ -46,7 +57,7 @@ function mapRagResponseToAnalysis(rag: RagResponse): QueryWithAnalysis["analysis
     supporting_source_count: rag.analysis.supporting_source_count,
     created_at: new Date().toISOString(),
     citations: rag.citations.map((c) => ({
-      id: crypto.randomUUID(),
+      id: generateId(),
       analysis_id: "",
       article_id: c.article_id,
       relevance_score: c.relevance_score,
@@ -104,7 +115,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   submitQuery: async (queryText: string) => {
     set({ queryLoading: true, queryError: null });
 
-    const queryId = crypto.randomUUID();
+    const queryId = generateId();
 
     // Save to Supabase in background (non-blocking)
     supabase.auth.getUser().then(({ data: { user } }) => {
