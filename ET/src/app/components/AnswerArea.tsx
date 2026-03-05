@@ -1,10 +1,31 @@
-import { ExternalLink, Copy, ThumbsUp, ThumbsDown, Download, Filter, ArrowUpDown, Check, SearchX, AlertTriangle } from "lucide-react";
-import { useState, useMemo } from "react";
+import { ExternalLink, Copy, ThumbsUp, ThumbsDown, Download, Filter, ArrowUpDown, Check, SearchX, AlertTriangle, Info, X } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
 import { useAppStore } from "@/stores/app";
 import { useLocaleStore } from "@/stores/locale";
 import { Skeleton } from "@/app/components/ui/skeleton";
 
 type SortOption = "date" | "relevance" | "source";
+
+function buildMarkdownExport(query: string, content: string, citations: { position: number; title: string; source: string; url: string; excerpt: string }[]) {
+  let md = `# Jaegeren Analysis\n\n**Query:** ${query}\n**Date:** ${new Date().toLocaleString()}\n\n## Analysis\n\n${content}\n\n`;
+  if (citations.length > 0) {
+    md += `## Sources\n\n`;
+    for (const c of citations) {
+      md += `${c.position}. **${c.title}** — ${c.source}\n   ${c.url}\n   > ${c.excerpt}\n\n`;
+    }
+  }
+  return md;
+}
+
+function downloadFile(content: string, filename: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export function AnswerArea() {
   const currentQuery = useAppStore((s) => s.currentQuery);
@@ -17,6 +38,9 @@ export function AnswerArea() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [showMethodology, setShowMethodology] = useState(false);
 
   const analysis = currentQuery?.analysis;
   const allCitations = analysis?.citations ?? [];
@@ -48,6 +72,37 @@ export function AnswerArea() {
     date: t.answer.date,
     source: t.answer.source,
   };
+
+  const citationData = useMemo(() => allCitations.map((c) => ({
+    position: c.position,
+    title: c.article.title,
+    source: c.article.source.name,
+    url: c.article.url,
+    excerpt: c.excerpt,
+  })), [allCitations]);
+
+  const handleCopy = useCallback(async () => {
+    if (!analysis) return;
+    const text = analysis.content + "\n\nSources:\n" + citationData.map((c) => `[${c.position}] ${c.title} (${c.source}) — ${c.url}`).join("\n");
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [analysis, citationData]);
+
+  const handleExport = useCallback((format: string) => {
+    if (!analysis || !currentQuery) return;
+    const md = buildMarkdownExport(currentQuery.query_text, analysis.content, citationData);
+    if (format === "md") {
+      downloadFile(md, `jaegeren-analysis-${Date.now()}.md`, "text/markdown");
+    } else if (format === "txt") {
+      downloadFile(md, `jaegeren-analysis-${Date.now()}.txt`, "text/plain");
+    } else if (format === "email") {
+      const subject = encodeURIComponent(`Jaegeren Analysis: ${currentQuery.query_text}`);
+      const body = encodeURIComponent(md);
+      window.open(`mailto:?subject=${subject}&body=${body}`);
+    }
+    setShowExportMenu(false);
+  }, [analysis, currentQuery, citationData]);
 
   // Loading state
   if (queryLoading) {
@@ -98,6 +153,31 @@ export function AnswerArea() {
   return (
     <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-stone-950">
       <div className="max-w-4xl">
+        {/* Methodology modal */}
+        {showMethodology && (
+          <>
+            <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowMethodology(false)} />
+            <div className="fixed inset-x-4 top-1/4 max-w-lg mx-auto bg-white dark:bg-stone-900 border-2 border-black dark:border-white rounded-lg shadow-xl z-50 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Info className="size-5 text-[#E94E3D]" />
+                  <h3 className="font-bold text-black dark:text-white">{t.answer.viewMethodology}</h3>
+                </div>
+                <button onClick={() => setShowMethodology(false)} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded">
+                  <X className="size-4" />
+                </button>
+              </div>
+              <div className="space-y-3 text-sm text-stone-700 dark:text-stone-300">
+                <p><strong>1. Vector Search:</strong> Your query is embedded using multilingual-e5-large (1024d) and matched against {allCitations.length > 0 ? "137+" : "our"} indexed articles in Pinecone.</p>
+                <p><strong>2. Reranking:</strong> Top 5 results are reranked using bge-reranker-v2-m3 to select the 3 most relevant passages.</p>
+                <p><strong>3. AI Synthesis:</strong> Claude Sonnet synthesizes an analysis from the retrieved context, with inline citation markers [1], [2], [3].</p>
+                <p><strong>4. Confidence Score:</strong> Based on source agreement, recency, and coverage breadth. Above 70% = High confidence.</p>
+                <p className="text-xs text-stone-500 pt-2 border-t border-stone-200 dark:border-stone-700">Sources are ingested every 2 hours from {sourceNames.length - 1 || 8} active feeds via automated RSS pipeline.</p>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Analysis content */}
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
@@ -105,14 +185,26 @@ export function AnswerArea() {
               {t.answer.analysis}
             </h2>
             <div className="flex items-center gap-2">
-              <button className="p-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded transition-colors" title={t.common.copy}>
-                <Copy className="size-4 text-stone-700 dark:text-stone-300" />
+              <button
+                onClick={handleCopy}
+                className={`p-1.5 rounded transition-colors ${copied ? "bg-green-100 dark:bg-green-900" : "hover:bg-stone-100 dark:hover:bg-stone-800"}`}
+                title={t.common.copy}
+              >
+                {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4 text-stone-700 dark:text-stone-300" />}
               </button>
-              <button className="p-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded transition-colors" title={t.common.helpful}>
-                <ThumbsUp className="size-4 text-stone-700 dark:text-stone-300" />
+              <button
+                onClick={() => setFeedback(feedback === "up" ? null : "up")}
+                className={`p-1.5 rounded transition-colors ${feedback === "up" ? "bg-green-100 dark:bg-green-900" : "hover:bg-stone-100 dark:hover:bg-stone-800"}`}
+                title={t.common.helpful}
+              >
+                <ThumbsUp className={`size-4 ${feedback === "up" ? "text-green-600" : "text-stone-700 dark:text-stone-300"}`} />
               </button>
-              <button className="p-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded transition-colors" title={t.common.notHelpful}>
-                <ThumbsDown className="size-4 text-stone-700 dark:text-stone-300" />
+              <button
+                onClick={() => setFeedback(feedback === "down" ? null : "down")}
+                className={`p-1.5 rounded transition-colors ${feedback === "down" ? "bg-red-100 dark:bg-red-900" : "hover:bg-stone-100 dark:hover:bg-stone-800"}`}
+                title={t.common.notHelpful}
+              >
+                <ThumbsDown className={`size-4 ${feedback === "down" ? "text-[#E94E3D]" : "text-stone-700 dark:text-stone-300"}`} />
               </button>
 
               {/* Export dropdown */}
@@ -129,13 +221,14 @@ export function AnswerArea() {
                     <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
                     <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-stone-900 border-2 border-black dark:border-white rounded shadow-lg z-20">
                       <div className="py-1">
-                        {[t.common.exportPdf, t.common.exportDocx, t.common.exportMd].map((label) => (
-                          <button key={label} onClick={() => setShowExportMenu(false)} className="w-full text-left px-4 py-2 text-sm text-stone-900 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
-                            {label}
-                          </button>
-                        ))}
+                        <button onClick={() => handleExport("md")} className="w-full text-left px-4 py-2 text-sm text-stone-900 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                          {t.common.exportMd}
+                        </button>
+                        <button onClick={() => handleExport("txt")} className="w-full text-left px-4 py-2 text-sm text-stone-900 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                          Export as Text
+                        </button>
                         <div className="border-t border-stone-200 dark:border-stone-700 my-1" />
-                        <button onClick={() => setShowExportMenu(false)} className="w-full text-left px-4 py-2 text-sm text-stone-900 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <button onClick={() => handleExport("email")} className="w-full text-left px-4 py-2 text-sm text-stone-900 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
                           {t.common.sendEmail}
                         </button>
                       </div>
@@ -160,7 +253,7 @@ export function AnswerArea() {
                 {/* Filter */}
                 <div className="relative">
                   <button
-                    onClick={() => setShowFilterMenu(!showFilterMenu)}
+                    onClick={() => { setShowFilterMenu(!showFilterMenu); setShowSortMenu(false); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs border-2 border-black dark:border-white bg-transparent hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black rounded transition-colors"
                   >
                     <Filter className="size-3.5" />
@@ -169,7 +262,7 @@ export function AnswerArea() {
                   {showFilterMenu && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setShowFilterMenu(false)} />
-                      <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-stone-900 border-2 border-black dark:border-white rounded shadow-lg z-20">
+                      <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-stone-900 border-2 border-black dark:border-white rounded shadow-lg z-20">
                         <div className="py-1">
                           {sourceNames.map((source) => (
                             <button
@@ -190,7 +283,7 @@ export function AnswerArea() {
                 {/* Sort */}
                 <div className="relative">
                   <button
-                    onClick={() => setShowSortMenu(!showSortMenu)}
+                    onClick={() => { setShowSortMenu(!showSortMenu); setShowFilterMenu(false); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs border-2 border-black dark:border-white bg-transparent hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black rounded transition-colors"
                   >
                     <ArrowUpDown className="size-3.5" />
@@ -281,7 +374,10 @@ export function AnswerArea() {
                   <span className="font-bold text-black dark:text-white">{new Date(analysis.created_at).toLocaleString()}</span>
                 </div>
               </div>
-              <button className="text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white underline underline-offset-2 transition-colors">
+              <button
+                onClick={() => setShowMethodology(true)}
+                className="text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white underline underline-offset-2 transition-colors"
+              >
                 {t.answer.viewMethodology}
               </button>
             </div>

@@ -1,4 +1,4 @@
-import { Search, BookmarkCheck, Database, ChevronRight, LogOut, Newspaper } from "lucide-react";
+import { BookmarkCheck, Database, ChevronRight, LogOut, Newspaper } from "lucide-react";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { LanguageSwitcher } from "@/app/components/LanguageSwitcher";
@@ -11,34 +11,14 @@ export function LeftNav() {
   const t = useLocaleStore((s) => s.t);
   const recentQueries = useAppStore((s) => s.recentQueries);
   const recentArticles = useAppStore((s) => s.recentArticles);
+  const sources = useAppStore((s) => s.sources);
   const submitQuery = useAppStore((s) => s.submitQuery);
 
-  const savedQueryItems = recentQueries.length > 0
-    ? recentQueries.slice(0, 5).map((q) => q.query_text)
-    : [];
-
-  const recentArticleItems = recentArticles.length > 0
-    ? recentArticles.slice(0, 5).map((a) => a.title.length > 40 ? a.title.substring(0, 40) + "..." : a.title)
-    : [];
-
-  const navSections = [
-    ...(recentArticleItems.length > 0 ? [{
-      title: t.nav.dailyScan,
-      icon: Newspaper,
-      items: recentArticleItems,
-    }] : []),
-    ...(savedQueryItems.length > 0 ? [{
-      title: t.nav.savedQueries,
-      icon: BookmarkCheck,
-      items: savedQueryItems,
-      onItemClick: (item: string) => submitQuery(item),
-    }] : []),
-    {
-      title: t.nav.sources,
-      icon: Database,
-      items: [t.nav.allSources],
-    },
-  ];
+  const savedQueryItems = recentQueries.slice(0, 5).map((q) => q.query_text);
+  const recentArticleItems = recentArticles.slice(0, 5).map((a) =>
+    a.title.length > 40 ? a.title.substring(0, 40) + "..." : a.title
+  );
+  const activeSources = sources.filter((s) => s.article_count > 0);
 
   return (
     <aside className="w-64 border-r border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex flex-col h-screen">
@@ -55,17 +35,18 @@ export function LeftNav() {
       </div>
 
       <nav className="flex-1 overflow-y-auto p-4">
-        {navSections.map((section) => (
-          <div key={section.title} className="mb-6">
+        {/* Daily Scan — recent articles */}
+        {recentArticleItems.length > 0 && (
+          <div className="mb-6">
             <div className="flex items-center gap-2 px-2 mb-2 text-stone-900 dark:text-stone-100">
-              <section.icon className="size-4" />
-              <h2 className="text-sm font-medium">{section.title}</h2>
+              <Newspaper className="size-4" />
+              <h2 className="text-sm font-medium">{t.nav.dailyScan}</h2>
             </div>
             <ul className="space-y-1">
-              {section.items.map((item) => (
+              {recentArticleItems.map((item) => (
                 <li key={item}>
                   <button
-                    onClick={() => "onItemClick" in section && (section as { onItemClick: (s: string) => void }).onItemClick(item)}
+                    onClick={() => submitQuery(item)}
                     className="w-full text-left px-2 py-1.5 text-sm text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white hover:bg-stone-50 dark:hover:bg-stone-800 rounded flex items-center justify-between group transition-colors"
                   >
                     <span className="truncate">{item}</span>
@@ -75,7 +56,55 @@ export function LeftNav() {
               ))}
             </ul>
           </div>
-        ))}
+        )}
+
+        {/* Saved Queries */}
+        {savedQueryItems.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 px-2 mb-2 text-stone-900 dark:text-stone-100">
+              <BookmarkCheck className="size-4" />
+              <h2 className="text-sm font-medium">{t.nav.savedQueries}</h2>
+            </div>
+            <ul className="space-y-1">
+              {savedQueryItems.map((item) => (
+                <li key={item}>
+                  <button
+                    onClick={() => submitQuery(item)}
+                    className="w-full text-left px-2 py-1.5 text-sm text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white hover:bg-stone-50 dark:hover:bg-stone-800 rounded flex items-center justify-between group transition-colors"
+                  >
+                    <span className="truncate">{item}</span>
+                    <ChevronRight className="size-3 text-stone-400 dark:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Sources — real source list with article counts */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 px-2 mb-2 text-stone-900 dark:text-stone-100">
+            <Database className="size-4" />
+            <h2 className="text-sm font-medium">{t.nav.sources}</h2>
+          </div>
+          <ul className="space-y-1">
+            {activeSources.length > 0 ? (
+              activeSources.map((source) => (
+                <li key={source.id}>
+                  <button
+                    onClick={() => submitQuery(`Latest news from ${source.name}`)}
+                    className="w-full text-left px-2 py-1.5 text-sm text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white hover:bg-stone-50 dark:hover:bg-stone-800 rounded flex items-center justify-between group transition-colors"
+                  >
+                    <span className="truncate">{source.name}</span>
+                    <span className="text-xs text-stone-400 dark:text-stone-500 flex-shrink-0">{source.article_count}</span>
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="px-2 py-1.5 text-xs text-stone-500">{t.common.loading}</li>
+            )}
+          </ul>
+        </div>
       </nav>
 
       <div className="p-4 border-t border-stone-200 dark:border-stone-800">
@@ -93,12 +122,6 @@ export function LeftNav() {
             </button>
           </div>
         )}
-        <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-400 mb-2">
-          <span>Jaegeren</span>
-          <button className="text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white transition-colors">
-            {t.common.settings}
-          </button>
-        </div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-stone-500">{t.common.theme}</span>
           <ThemeToggle />
