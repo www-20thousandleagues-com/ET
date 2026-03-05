@@ -21,7 +21,7 @@ export function SourceStrip() {
               <Skeleton key={i} className="h-8 w-24 rounded" />
             ))
           ) : sources.length > 0 ? (
-            sources.map((source) => (
+            sources.filter((s) => s.article_count > 0).map((source) => (
               <button
                 key={source.id}
                 className="flex items-center gap-2 px-3 py-1.5 rounded border-2 border-black dark:border-white bg-transparent hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black transition-colors"

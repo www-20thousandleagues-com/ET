@@ -15,24 +15,24 @@ export function LeftNav() {
 
   const savedQueryItems = recentQueries.length > 0
     ? recentQueries.slice(0, 5).map((q) => q.query_text)
-    : [t.nav.usChinaTrade, t.nav.greenEnergy, t.nav.supplyChain];
+    : [];
 
   const recentArticleItems = recentArticles.length > 0
-    ? recentArticles.slice(0, 4).map((a) => a.title.length > 35 ? a.title.substring(0, 35) + "..." : a.title)
-    : [t.nav.todaysBriefing, t.nav.marketMovers, t.nav.policyUpdates];
+    ? recentArticles.slice(0, 5).map((a) => a.title.length > 40 ? a.title.substring(0, 40) + "..." : a.title)
+    : [];
 
   const navSections = [
-    {
+    ...(recentArticleItems.length > 0 ? [{
       title: t.nav.dailyScan,
       icon: Newspaper,
       items: recentArticleItems,
-    },
-    {
+    }] : []),
+    ...(savedQueryItems.length > 0 ? [{
       title: t.nav.savedQueries,
       icon: BookmarkCheck,
       items: savedQueryItems,
       onItemClick: (item: string) => submitQuery(item),
-    },
+    }] : []),
     {
       title: t.nav.sources,
       icon: Database,

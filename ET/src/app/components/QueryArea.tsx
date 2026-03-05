@@ -1,5 +1,5 @@
 import { Search, Sparkles, Command, Loader2 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAppStore } from "@/stores/app";
 import { useLocaleStore } from "@/stores/locale";
 
@@ -8,6 +8,7 @@ export function QueryArea() {
   const inputRef = useRef<HTMLInputElement>(null);
   const submitQuery = useAppStore((s) => s.submitQuery);
   const queryLoading = useAppStore((s) => s.queryLoading);
+  const recentArticles = useAppStore((s) => s.recentArticles);
   const t = useLocaleStore((s) => s.t);
 
   useEffect(() => {
@@ -34,7 +35,20 @@ export function QueryArea() {
     }
   };
 
-  const quickQueries = [t.query.usTariff, t.query.chinaEv, t.query.euCarbon];
+  // Derive quick queries from recent article titles (first 3 unique sources)
+  const quickQueries = useMemo(() => {
+    if (recentArticles.length === 0) return [t.query.usTariff, t.query.chinaEv, t.query.euCarbon];
+    const seen = new Set<string>();
+    const queries: string[] = [];
+    for (const a of recentArticles) {
+      if (!seen.has(a.source_name) && queries.length < 3) {
+        seen.add(a.source_name);
+        const short = a.title.length > 50 ? a.title.substring(0, 50) + "..." : a.title;
+        queries.push(short);
+      }
+    }
+    return queries;
+  }, [recentArticles, t]);
 
   return (
     <div className="border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 p-6">
@@ -69,7 +83,7 @@ export function QueryArea() {
           {quickQueries.map((q) => (
             <button
               key={q}
-              onClick={() => setQuery(q)}
+              onClick={() => { setQuery(q); submitQuery(q); }}
               className="px-3 py-1 text-xs border-2 border-black dark:border-white bg-transparent hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black rounded transition-colors"
             >
               {q}
