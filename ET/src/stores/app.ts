@@ -3,6 +3,14 @@ import type { Source, QueryWithAnalysis, CitationWithArticle } from "@/types/dat
 import { supabase } from "@/lib/supabase";
 import { queryRagPipeline, type RagResponse } from "@/lib/api";
 
+type RecentArticle = {
+  id: string;
+  title: string;
+  source_name: string;
+  published_at: string;
+  url: string;
+};
+
 type AppState = {
   // Sources
   sources: Source[];
@@ -18,6 +26,14 @@ type AppState = {
   // Query history
   recentQueries: QueryWithAnalysis[];
   fetchRecentQueries: () => Promise<void>;
+
+  // Recent articles (for trending/sidebar)
+  recentArticles: RecentArticle[];
+  fetchRecentArticles: () => Promise<void>;
+
+  // Stats
+  queryCountToday: number;
+  fetchQueryCountToday: () => Promise<void>;
 };
 
 function mapRagResponseToAnalysis(rag: RagResponse): QueryWithAnalysis["analysis"] {
@@ -145,6 +161,44 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ recentQueries: (data as unknown as QueryWithAnalysis[]) ?? [] });
     } catch {
       set({ recentQueries: [] });
+    }
+  },
+
+  recentArticles: [],
+
+  fetchRecentArticles: async () => {
+    try {
+      const { data } = await supabase
+        .from("articles")
+        .select("id, title, published_at, url, source:sources(name)")
+        .order("published_at", { ascending: false })
+        .limit(20);
+      const articles = (data ?? []).map((a: Record<string, unknown>) => ({
+        id: a.id as string,
+        title: a.title as string,
+        source_name: (a.source as { name: string })?.name ?? "",
+        published_at: a.published_at as string,
+        url: a.url as string,
+      }));
+      set({ recentArticles: articles });
+    } catch {
+      set({ recentArticles: [] });
+    }
+  },
+
+  queryCountToday: 0,
+
+  fetchQueryCountToday: async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from("queries")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", today.toISOString());
+      set({ queryCountToday: count ?? 0 });
+    } catch {
+      set({ queryCountToday: 0 });
     }
   },
 }));

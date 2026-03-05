@@ -8,10 +8,16 @@ import { useAppStore } from "@/stores/app";
 
 export function DashboardPage() {
   const fetchSources = useAppStore((s) => s.fetchSources);
+  const fetchRecentArticles = useAppStore((s) => s.fetchRecentArticles);
+  const fetchQueryCountToday = useAppStore((s) => s.fetchQueryCountToday);
+  const fetchRecentQueries = useAppStore((s) => s.fetchRecentQueries);
 
   useEffect(() => {
     fetchSources();
-  }, [fetchSources]);
+    fetchRecentArticles();
+    fetchQueryCountToday();
+    fetchRecentQueries();
+  }, [fetchSources, fetchRecentArticles, fetchQueryCountToday, fetchRecentQueries]);
 
   return (
     <div className="flex h-screen bg-white dark:bg-stone-950 overflow-hidden">

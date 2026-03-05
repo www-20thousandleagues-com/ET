@@ -35,9 +35,9 @@ export const da: typeof en = {
     signupSubtitle: "Kom i gang med Jaegeren",
     noAccount: "Har du ikke en konto?",
     hasAccount: "Har du allerede en konto?",
-    tagline: "Overblik over geopolitiske skift, handelsmonstre og okonomiske politikker - syntetiseret fra hundredvis af kilder i realtid.",
-    sources: "2.341 kilder",
-    dailyAnalyses: "47 daglige analyser",
+    tagline: "Overblik over geopolitiske skift, handelsmonstre og okonomiske politikker - syntetiseret fra flere kilder i realtid.",
+    sources: "17 aktive kilder",
+    dailyAnalyses: "Realtidsanalyse",
     aiPowered: "AI-drevet",
   },
   nav: {
@@ -88,22 +88,10 @@ export const da: typeof en = {
   },
   sidebar: {
     sendToAnalyst: "Send til Analytikeren",
-    relatedQuestions: "Relaterede spoergsmaal",
-    trendingTopics: "Trending emner",
+    latestArticles: "Seneste artikler",
+    topSources: "Top kilder",
     queriesToday: "Foresporgsler i dag",
     monitoredSources: "Overvaagede kilder",
     newArticles: "Nye artikler",
   },
-  relatedQuestions: [
-    "Hvad er konsekvenserne for europaeiske halvlederfirmaer?",
-    "Hvordan paavirker dette effektiviteten af USA's eksportkontrol?",
-    "Hvilke lande vil sandsynligvis drage fordel af forsyningskdeskift?",
-    "Hvad er tidslinjen for Kinas selvforsyningsmaal?",
-    "Hvordan reagerer Taiwan og Sydkorea paa disse udviklinger?",
-  ],
-  trendingTopics: [
-    { title: "Gron transition metaller", trend: "+24%" },
-    { title: "Digital valutapolitik", trend: "+18%" },
-    { title: "Infrastruktur finansiering", trend: "+12%" },
-  ],
 } as const;

@@ -1,29 +1,42 @@
-import { Search, BookmarkCheck, Database, ChevronRight, LogOut } from "lucide-react";
+import { Search, BookmarkCheck, Database, ChevronRight, LogOut, Newspaper } from "lucide-react";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { LanguageSwitcher } from "@/app/components/LanguageSwitcher";
 import { useAuthStore } from "@/stores/auth";
 import { useLocaleStore } from "@/stores/locale";
+import { useAppStore } from "@/stores/app";
 
 export function LeftNav() {
   const { profile, signOut } = useAuthStore();
   const t = useLocaleStore((s) => s.t);
+  const recentQueries = useAppStore((s) => s.recentQueries);
+  const recentArticles = useAppStore((s) => s.recentArticles);
+  const submitQuery = useAppStore((s) => s.submitQuery);
+
+  const savedQueryItems = recentQueries.length > 0
+    ? recentQueries.slice(0, 5).map((q) => q.query_text)
+    : [t.nav.usChinaTrade, t.nav.greenEnergy, t.nav.supplyChain];
+
+  const recentArticleItems = recentArticles.length > 0
+    ? recentArticles.slice(0, 4).map((a) => a.title.length > 35 ? a.title.substring(0, 35) + "..." : a.title)
+    : [t.nav.todaysBriefing, t.nav.marketMovers, t.nav.policyUpdates];
 
   const navSections = [
     {
       title: t.nav.dailyScan,
-      icon: Search,
-      items: [t.nav.todaysBriefing, t.nav.marketMovers, t.nav.policyUpdates],
+      icon: Newspaper,
+      items: recentArticleItems,
     },
     {
       title: t.nav.savedQueries,
       icon: BookmarkCheck,
-      items: [t.nav.usChinaTrade, t.nav.greenEnergy, t.nav.supplyChain],
+      items: savedQueryItems,
+      onItemClick: (item: string) => submitQuery(item),
     },
     {
       title: t.nav.sources,
       icon: Database,
-      items: [t.nav.allSources, t.nav.premiumTier, t.nav.customFeeds],
+      items: [t.nav.allSources],
     },
   ];
 
@@ -51,9 +64,12 @@ export function LeftNav() {
             <ul className="space-y-1">
               {section.items.map((item) => (
                 <li key={item}>
-                  <button className="w-full text-left px-2 py-1.5 text-sm text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white hover:bg-stone-50 dark:hover:bg-stone-800 rounded flex items-center justify-between group transition-colors">
-                    <span>{item}</span>
-                    <ChevronRight className="size-3 text-stone-400 dark:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <button
+                    onClick={() => "onItemClick" in section && (section as { onItemClick: (s: string) => void }).onItemClick(item)}
+                    className="w-full text-left px-2 py-1.5 text-sm text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white hover:bg-stone-50 dark:hover:bg-stone-800 rounded flex items-center justify-between group transition-colors"
+                  >
+                    <span className="truncate">{item}</span>
+                    <ChevronRight className="size-3 text-stone-400 dark:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </button>
                 </li>
               ))}
@@ -78,7 +94,7 @@ export function LeftNav() {
           </div>
         )}
         <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-400 mb-2">
-          <span>v1.2.4</span>
+          <span>Jaegeren</span>
           <button className="text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white transition-colors">
             {t.common.settings}
           </button>

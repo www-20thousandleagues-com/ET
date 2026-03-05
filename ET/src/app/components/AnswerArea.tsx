@@ -278,7 +278,7 @@ export function AnswerArea() {
                 </div>
                 <div>
                   <span className="text-stone-700 dark:text-stone-300">{t.answer.lastUpdated}: </span>
-                  <span className="font-bold text-black dark:text-white">2 {t.answer.hoursAgo}</span>
+                  <span className="font-bold text-black dark:text-white">{new Date(analysis.created_at).toLocaleString()}</span>
                 </div>
               </div>
               <button className="text-stone-700 dark:text-stone-300 hover:text-black dark:hover:text-white underline underline-offset-2 transition-colors">

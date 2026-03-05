@@ -33,9 +33,9 @@ export const en = {
     signupSubtitle: "Get started with Jaegeren",
     noAccount: "Don't have an account?",
     hasAccount: "Already have an account?",
-    tagline: "Overview of geopolitical shifts, trade patterns and economic policies — synthesized from hundreds of sources in real time.",
-    sources: "2,341 sources",
-    dailyAnalyses: "47 daily analyses",
+    tagline: "Overview of geopolitical shifts, trade patterns and economic policies — synthesized from multiple sources in real time.",
+    sources: "17 active sources",
+    dailyAnalyses: "Real-time analysis",
     aiPowered: "AI-powered",
   },
   nav: {
@@ -86,22 +86,10 @@ export const en = {
   },
   sidebar: {
     sendToAnalyst: "Send to Analyst",
-    relatedQuestions: "Related questions",
-    trendingTopics: "Trending topics",
+    latestArticles: "Latest articles",
+    topSources: "Top sources",
     queriesToday: "Queries today",
     monitoredSources: "Monitored sources",
     newArticles: "New articles",
   },
-  relatedQuestions: [
-    "What are the implications for European semiconductor firms?",
-    "How does this affect the effectiveness of US export controls?",
-    "Which countries are likely to benefit from supply chain shifts?",
-    "What is the timeline for China's self-sufficiency goals?",
-    "How are Taiwan and South Korea responding to these developments?",
-  ],
-  trendingTopics: [
-    { title: "Green transition metals", trend: "+24%" },
-    { title: "Digital currency policy", trend: "+18%" },
-    { title: "Infrastructure financing", trend: "+12%" },
-  ],
 } as const;
