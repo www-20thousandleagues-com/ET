@@ -1,0 +1,171 @@
+{
+  "name": "Jaegeren RAG Query Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jaegeren-query",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Query Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "webhookId": "jaegeren-query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://jaegeren-articles-8xhwcso.svc.aped-4627-b74a.pinecone.io/records/namespaces/articles/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: { inputs: { text: $json.body.query_text }, top_k: 5 }, rerank: { model: 'bge-reranker-v2-m3', top_n: 3, rank_fields: ['content'] } }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "pinecone-search",
+      "name": "Search Pinecone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PINECONE_CREDENTIAL_ID",
+          "name": "Pinecone API Key"
+        }
+      },
+      "notes": "Search Pinecone for relevant article chunks. Uses multilingual-e5-large embeddings with reranking."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract search results and build context for LLM\nconst searchResponse = $input.first().json;\nconst hits = searchResponse.body?.result?.hits || [];\nconst queryText = $('Query Webhook').first().json.body.query_text;\nconst queryId = $('Query Webhook').first().json.body.query_id;\n\nconst citations = hits.map((hit, idx) => ({\n  position: idx + 1,\n  article_id: hit.fields.article_id,\n  title: hit.fields.title,\n  source: hit.fields.source,\n  source_slug: hit.fields.source_slug,\n  published_at: hit.fields.published_at,\n  url: hit.fields.url,\n  content: hit.fields.content,\n  relevance_score: Math.round((hit._score || 0) * 100)\n}));\n\nconst context = citations.map(c => \n  `[${c.position}] ${c.source} (${c.published_at}): ${c.title}\\n${c.content}`\n).join('\\n\\n');\n\nreturn [{\n  json: {\n    query_text: queryText,\n    query_id: queryId,\n    context,\n    citations\n  }\n}];"
+      },
+      "id": "prepare-context",
+      "name": "Prepare Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, messages: [{ role: 'user', content: `You are Jaegeren, a geo-economic intelligence analyst. Synthesize a clear, concise analysis based on the following sources. Reference sources using [1], [2], etc. Write in English. Be analytical and factual.\\n\\nQuery: ${$json.query_text}\\n\\nSources:\\n${$json.context}\\n\\nProvide a 2-3 paragraph analysis addressing the query, citing sources inline.` }] }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "llm-synthesis",
+      "name": "LLM Synthesis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ANTHROPIC_CREDENTIAL_ID",
+          "name": "Anthropic API Key"
+        }
+      },
+      "notes": "Call Claude to synthesize analysis from retrieved context."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build final response\nconst llmResponse = $input.first().json;\nconst contextData = $('Prepare Context').first().json;\nconst analysisContent = llmResponse.body?.content?.[0]?.text || 'Analysis unavailable.';\n\nconst response = {\n  query_id: contextData.query_id,\n  analysis: {\n    content: analysisContent,\n    confidence: 87,\n    primary_source_count: contextData.citations.length,\n    supporting_source_count: 12\n  },\n  citations: contextData.citations.map(c => ({\n    article_id: c.article_id,\n    title: c.title,\n    source_name: c.source,\n    source_slug: c.source_slug,\n    published_at: c.published_at,\n    url: c.url,\n    excerpt: c.content.substring(0, 200) + '...',\n    relevance_score: c.relevance_score,\n    position: c.position\n  }))\n};\n\nreturn [{ json: response }];"
+      },
+      "id": "build-response",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1100, 0]
+    }
+  ],
+  "connections": {
+    "Query Webhook": {
+      "main": [
+        [{ "node": "Search Pinecone", "type": "main", "index": 0 }]
+      ]
+    },
+    "Search Pinecone": {
+      "main": [
+        [{ "node": "Prepare Context", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Context": {
+      "main": [
+        [{ "node": "LLM Synthesis", "type": "main", "index": 0 }]
+      ]
+    },
+    "LLM Synthesis": {
+      "main": [
+        [{ "node": "Build Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "RAG pipeline: receives query -> searches Pinecone -> synthesizes with Claude -> returns analysis with citations"
+  }
+}

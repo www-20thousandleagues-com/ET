@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd ET && pnpm dev)",
+      "Bash(cd ET && pnpm build)",
+      "Bash(cd ET && pnpm install)",
+      "Bash(cd ET && npx tsc --noEmit)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git branch *)",
+      "Bash(git checkout -b *)",
+      "Bash(gh issue *)",
+      "Bash(gh pr *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(cat *)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/.credentials*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'File modified — remember to verify build: cd ET && pnpm build'"
+          }
+        ]
+      }
+    ]
+  }
+}
