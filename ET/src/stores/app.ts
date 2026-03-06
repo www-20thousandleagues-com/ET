@@ -124,14 +124,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const queryId = generateId();
 
-    // Save query to Supabase in background (non-blocking)
+    // Save query to Supabase (must complete before analysis insert)
     const user = useAuthStore.getState().user;
     if (user) {
-      supabase
+      await supabase
         .from("queries")
-        .insert({ query_text: queryText, user_id: user.id, is_saved: false })
-        .then(() => {})
-        .catch(() => {});
+        .insert({ id: queryId, query_text: queryText, user_id: user.id, is_saved: false });
     }
 
     // Call n8n RAG pipeline + Web Search in parallel
