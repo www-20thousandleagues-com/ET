@@ -70,10 +70,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       // Register auth state change listener for future events (sign-in, sign-out, token refresh)
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
-          set({ user: session.user, session, profile, loading: false, initialized: true });
+          // Don't await — fire and forget to avoid blocking signInWithPassword
+          withTimeout(fetchProfile(session.user.id), 2000).then((profile) => {
+            set({ user: session.user, session, profile, loading: false, initialized: true });
+          });
         } else {
           set({ user: null, session: null, profile: null, loading: false, initialized: true });
         }
