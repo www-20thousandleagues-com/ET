@@ -75,15 +75,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       authSubscription = subscription;
 
-      // Timeout guard: if getSession hangs, still mark as initialized
-      const timeout = setTimeout(() => {
-        if (!get().initialized) {
-          set({ loading: false, initialized: true });
-        }
-      }, 5000);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-      const { data: { session } } = await supabase.auth.getSession();
-      clearTimeout(timeout);
+      // If there's a stale/invalid refresh token, clear it and continue as logged out
+      if (sessionError) {
+        await supabase.auth.signOut().catch(() => {});
+        set({ loading: false, initialized: true });
+        return;
+      }
 
       if (session?.user) {
         const { data: profile } = await supabase
