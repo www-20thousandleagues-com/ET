@@ -11,21 +11,32 @@ type AuthState = {
   profile: Profile | null;
   loading: boolean;
   initialized: boolean;
-  devMode: boolean;
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 };
 
-function enterUnconfiguredState(set: (state: Partial<AuthState>) => void) {
-  set({
-    devMode: false,
-    user: null,
-    profile: null,
-    loading: false,
-    initialized: true,
-  });
+/** Fetch profile, swallowing errors so auth doesn't hang */
+async function fetchProfile(userId: string): Promise<Profile | null> {
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/** Race a promise against a timeout — returns null on timeout */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -34,29 +45,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   loading: true,
   initialized: false,
-  devMode: false,
 
   initialize: async () => {
     if (get().initialized) return;
 
+    // No Supabase configured — go straight to auth page
     if (!isSupabaseConfigured()) {
-      enterUnconfiguredState(set);
+      set({ loading: false, initialized: true });
       return;
     }
 
+    // Hard timeout: if init takes > 8s, stop loading and show auth page
+    const timeout = setTimeout(() => {
+      if (!get().initialized) {
+        set({ user: null, session: null, profile: null, loading: false, initialized: true });
+      }
+    }, 8000);
+
     try {
-      // Register listener first to avoid race window between getSession and auth events
+      // Unsubscribe any previous listener
       if (authSubscription) {
         authSubscription.unsubscribe();
+        authSubscription = null;
       }
 
+      // Register auth state change listener for future events (sign-in, sign-out, token refresh)
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", session.user.id)
-            .single();
+          const profile = await fetchProfile(session.user.id);
           set({ user: session.user, session, profile, loading: false, initialized: true });
         } else {
           set({ user: null, session: null, profile: null, loading: false, initialized: true });
@@ -64,28 +80,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       authSubscription = subscription;
 
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Try to get current session (with 5s timeout to prevent hanging)
+      const sessionResult = await withTimeout(supabase.auth.getSession(), 5000);
 
-      // If there's a stale/invalid refresh token, clear it and continue as logged out
-      if (sessionError) {
-        await supabase.auth.signOut().catch(() => {});
+      // Timeout or error — show auth page
+      if (!sessionResult) {
         set({ loading: false, initialized: true });
+        clearTimeout(timeout);
         return;
       }
 
+      const { data: { session }, error: sessionError } = sessionResult;
+
+      // Stale/invalid token — clear and show auth page
+      if (sessionError) {
+        supabase.auth.signOut().catch(() => {});
+        set({ loading: false, initialized: true });
+        clearTimeout(timeout);
+        return;
+      }
+
+      // Valid session — fetch profile
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
+        const profile = await withTimeout(fetchProfile(session.user.id), 3000);
         set({ user: session.user, session, profile, loading: false, initialized: true });
       } else {
+        // No session — show auth page
         set({ loading: false, initialized: true });
       }
     } catch {
-      enterUnconfiguredState(set);
+      // Any error — show auth page rather than spinner
+      set({ user: null, session: null, profile: null, loading: false, initialized: true });
     }
+
+    clearTimeout(timeout);
   },
 
   signIn: async (email, password) => {
@@ -103,9 +131,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    if (!get().devMode) {
-      await supabase.auth.signOut();
-    }
+    await supabase.auth.signOut().catch(() => {});
     set({ user: null, session: null, profile: null });
   },
 }));
