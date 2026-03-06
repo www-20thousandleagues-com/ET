@@ -1,0 +1,123 @@
+{
+  "name": "Jaegeren Web Search Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jaegeren-websearch",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Query Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "webhookId": "jaegeren-websearch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ api_key: $env.TAVILY_API_KEY, query: $json.body.query_text, max_results: 5, search_depth: 'advanced', include_answer: false }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "tavily-search",
+      "name": "Tavily Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, -100],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://serpapi.com/search.json?engine=google&q={{ encodeURIComponent($json.body.query_text) }}&num=5&api_key={{ $env.SERPAPI_API_KEY }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "serpapi-search",
+      "name": "SerpApi Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 100],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge Tavily + SerpApi results, deduplicate by URL\nconst queryText = $('Query Webhook').first().json.body.query_text;\nconst queryId = $('Query Webhook').first().json.body.query_id;\n\nconst results = [];\nconst seenUrls = new Set();\n\n// Process Tavily results\ntry {\n  const tavily = $('Tavily Search').first().json;\n  const tavilyResults = tavily.body?.results || tavily.results || [];\n  for (const r of tavilyResults) {\n    const url = (r.url || '').trim();\n    if (!url || seenUrls.has(url)) continue;\n    seenUrls.add(url);\n    results.push({\n      title: (r.title || '').trim(),\n      url,\n      content: (r.content || '').substring(0, 500),\n      source: 'tavily',\n      score: r.score || 0,\n      published_date: r.published_date || ''\n    });\n  }\n} catch (e) { /* Tavily failed, continue with SerpApi */ }\n\n// Process SerpApi results\ntry {\n  const serp = $('SerpApi Search').first().json;\n  const organicResults = serp.body?.organic_results || serp.organic_results || [];\n  for (const r of organicResults) {\n    const url = (r.link || '').trim();\n    if (!url || seenUrls.has(url)) continue;\n    seenUrls.add(url);\n    results.push({\n      title: (r.title || '').trim(),\n      url,\n      content: (r.snippet || '').substring(0, 500),\n      source: 'serpapi',\n      score: r.position ? (1 - (r.position - 1) * 0.15) : 0.5,\n      published_date: r.date || ''\n    });\n  }\n} catch (e) { /* SerpApi failed, continue */ }\n\n// Sort by score descending, take top 8\nresults.sort((a, b) => b.score - a.score);\nconst top = results.slice(0, 8);\n\nreturn [{\n  json: {\n    query_text: queryText,\n    query_id: queryId,\n    web_results: top,\n    result_count: top.length\n  }\n}];"
+      },
+      "id": "merge-results",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 0]
+    }
+  ],
+  "connections": {
+    "Query Webhook": {
+      "main": [
+        [
+          { "node": "Tavily Search", "type": "main", "index": 0 },
+          { "node": "SerpApi Search", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Tavily Search": {
+      "main": [
+        [{ "node": "Merge Results", "type": "main", "index": 0 }]
+      ]
+    },
+    "SerpApi Search": {
+      "main": [
+        [{ "node": "Merge Results", "type": "main", "index": 0 }]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Web search pipeline: receives query -> parallel Tavily + SerpApi search -> merge & deduplicate -> return results"
+  }
+}

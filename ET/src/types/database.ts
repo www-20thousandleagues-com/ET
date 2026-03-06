@@ -133,6 +133,15 @@ export type RagAnalysis = {
   citations: RagCitation[];
 };
 
+export type WebResult = {
+  title: string;
+  url: string;
+  content: string;
+  source: string;
+  score: number;
+  published_date: string;
+};
+
 export type RagQueryResult = {
   id: string;
   user_id: string;
@@ -140,4 +149,5 @@ export type RagQueryResult = {
   is_saved: boolean;
   created_at: string;
   analysis: RagAnalysis | null;
+  webResults?: WebResult[];
 };

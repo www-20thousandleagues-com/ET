@@ -1,9 +1,9 @@
-import { ExternalLink, Copy, ThumbsUp, ThumbsDown, Download, Filter, ArrowUpDown, Check, SearchX, AlertTriangle, Info, X, ArrowLeft, Newspaper } from "lucide-react";
+import { ExternalLink, Copy, ThumbsUp, ThumbsDown, Download, Filter, ArrowUpDown, Check, SearchX, AlertTriangle, Info, X, ArrowLeft, Newspaper, Globe } from "lucide-react";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useAppStore } from "@/stores/app";
 import { useLocaleStore } from "@/stores/locale";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import type { RagAnalysis, RagCitation } from "@/types/database";
+import type { RagAnalysis, RagCitation, WebResult } from "@/types/database";
 
 type SortOption = "date" | "relevance" | "source";
 
@@ -190,6 +190,50 @@ function CitationList({ citations, sortBy, t }: { citations: RagCitation[]; sort
   );
 }
 
+function WebResultsList({ results }: { results: WebResult[] }) {
+  if (results.length === 0) return null;
+  return (
+    <div className="mt-8">
+      <div className="flex items-center gap-2 mb-4">
+        <Globe className="size-4 text-brand" />
+        <h3 className="text-sm font-bold text-foreground">Live Web Results</h3>
+        <span className="text-xs text-muted-foreground">({results.length})</span>
+      </div>
+      <div className="space-y-3">
+        {results.map((r, i) => (
+          <a
+            key={`${r.url}-${i}`}
+            href={r.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block p-4 border-2 border-border rounded hover:border-brand transition-colors group bg-card"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold text-foreground bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded">
+                    Web
+                  </span>
+                  {r.published_date && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(r.published_date).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+                <h4 className="text-sm font-medium text-foreground mb-1 group-hover:text-brand transition-colors">
+                  {r.title}
+                </h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">{r.content}</p>
+              </div>
+              <ExternalLink className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1" />
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // --- Main component ---
 
 export function AnswerArea() {
@@ -200,6 +244,7 @@ export function AnswerArea() {
   const sources = useAppStore((s) => s.sources);
   const submitFeedback = useAppStore((s) => s.submitFeedback);
   const t = useLocaleStore((s) => s.t);
+  const webResults = currentQuery?.webResults ?? [];
 
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [filterSource, setFilterSource] = useState<string>("all");
@@ -495,6 +540,9 @@ export function AnswerArea() {
             <CitationList citations={citations} sortBy={sortBy} t={t} />
           </div>
         )}
+
+        {/* Web search results */}
+        <WebResultsList results={webResults} />
 
         {/* Confidence metadata */}
         {analysis && (

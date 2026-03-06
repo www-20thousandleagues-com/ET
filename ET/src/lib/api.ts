@@ -22,6 +22,32 @@ export type RagResponse = {
   }[];
 };
 
+export type WebSearchResult = {
+  title: string;
+  url: string;
+  content: string;
+  source: string;
+  score: number;
+  published_date: string;
+};
+
+export type WebSearchResponse = {
+  query_id: string;
+  query_text: string;
+  web_results: WebSearchResult[];
+  result_count: number;
+};
+
+function buildHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (WEBHOOK_SECRET) {
+    headers["x-webhook-secret"] = WEBHOOK_SECRET;
+  }
+  return headers;
+}
+
 export async function queryRagPipeline(
   queryText: string,
   queryId: string
@@ -30,17 +56,9 @@ export async function queryRagPipeline(
     throw new Error("VITE_N8N_WEBHOOK_URL not configured");
   }
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  if (WEBHOOK_SECRET) {
-    headers["x-webhook-secret"] = WEBHOOK_SECRET;
-  }
-
   const res = await fetch(`${N8N_WEBHOOK_URL}/jaegeren-query`, {
     method: "POST",
-    headers,
+    headers: buildHeaders(),
     body: JSON.stringify({ query_text: queryText, query_id: queryId }),
   });
 
@@ -49,4 +67,26 @@ export async function queryRagPipeline(
   }
 
   return res.json();
+}
+
+export async function queryWebSearch(
+  queryText: string,
+  queryId: string
+): Promise<WebSearchResponse> {
+  if (!N8N_WEBHOOK_URL) {
+    return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
+  }
+
+  try {
+    const res = await fetch(`${N8N_WEBHOOK_URL}/jaegeren-websearch`, {
+      method: "POST",
+      headers: buildHeaders(),
+      body: JSON.stringify({ query_text: queryText, query_id: queryId }),
+    });
+
+    if (!res.ok) return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
+    return res.json();
+  } catch {
+    return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
+  }
 }

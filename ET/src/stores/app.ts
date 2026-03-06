@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { Source } from "@/types/database";
 import type { RagQueryResult, RagAnalysis, RagCitation } from "@/types/database";
 import { supabase } from "@/lib/supabase";
-import { queryRagPipeline, type RagResponse } from "@/lib/api";
+import { queryRagPipeline, queryWebSearch, type RagResponse } from "@/lib/api";
 
 // crypto.randomUUID() requires secure context (HTTPS). Fallback for HTTP.
 function generateId(): string {
@@ -130,9 +130,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     }).catch(() => {});
 
-    // Call n8n RAG pipeline
+    // Call n8n RAG pipeline + Web Search in parallel
     try {
-      const rag = await queryRagPipeline(queryText, queryId);
+      const [rag, webSearch] = await Promise.all([
+        queryRagPipeline(queryText, queryId),
+        queryWebSearch(queryText, queryId).catch(() => null),
+      ]);
       const analysis = mapRagResponseToAnalysis(rag);
 
       const newQuery: RagQueryResult = {
@@ -142,6 +145,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         is_saved: false,
         created_at: new Date().toISOString(),
         analysis,
+        webResults: webSearch?.web_results ?? [],
       };
 
       // Update current query and prepend to recent queries
