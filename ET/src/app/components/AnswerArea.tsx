@@ -84,9 +84,27 @@ export function AnswerArea() {
   const handleCopy = useCallback(async () => {
     if (!analysis) return;
     const text = analysis.content + "\n\nSources:\n" + citationData.map((c) => `[${c.position}] ${c.title} (${c.source}) — ${c.url}`).join("\n");
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for HTTP (non-secure context)
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Last resort: open in new window for manual copy
+      const w = window.open("", "_blank");
+      if (w) { w.document.write(`<pre>${text}</pre>`); }
+    }
   }, [analysis, citationData]);
 
   const handleExport = useCallback((format: string) => {
