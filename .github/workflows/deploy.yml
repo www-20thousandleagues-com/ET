@@ -6,9 +6,38 @@ on:
     paths:
       - 'ET/**'
       - '.github/workflows/deploy.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ET/**'
 
 jobs:
+  check:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: ET/pnpm-lock.yaml
+      - name: Install dependencies
+        working-directory: ET
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck (build)
+        working-directory: ET
+        run: pnpm build
+      - name: Lint
+        working-directory: ET
+        run: pnpm lint || true
+
   build:
+    name: Build
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,8 +56,14 @@ jobs:
           pnpm build
 
   deploy:
+    name: Deploy to Production
     needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1

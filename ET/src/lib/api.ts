@@ -64,6 +64,7 @@ export async function queryRagPipeline(
     headers: buildHeaders(),
     body: JSON.stringify({ query_text: queryText, query_id: queryId }),
     signal: controller.signal,
+    keepalive: true,
   });
 
   clearTimeout(timeout);
@@ -72,7 +73,11 @@ export async function queryRagPipeline(
     throw new Error(`RAG pipeline error: ${res.status}`);
   }
 
-  return res.json();
+  const data = await res.json();
+  if (!data || typeof data.analysis?.content !== "string") {
+    throw new Error("Invalid RAG response structure");
+  }
+  return data as RagResponse;
 }
 
 export async function queryWebSearch(
@@ -92,13 +97,16 @@ export async function queryWebSearch(
       headers: buildHeaders(),
       body: JSON.stringify({ query_text: queryText, query_id: queryId }),
       signal: controller.signal,
+      keepalive: true,
     });
 
     clearTimeout(timeout);
 
     if (!res.ok) return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
-    return res.json();
-  } catch {
+    const data = await res.json();
+    return data as WebSearchResponse;
+  } catch (e) {
+    console.error("Web search failed:", e);
     return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
   }
 }

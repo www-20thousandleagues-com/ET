@@ -5,6 +5,39 @@ import { supabase } from "@/lib/supabase";
 import { queryRagPipeline, queryWebSearch, type RagResponse } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
 
+const MAX_QUERY_LENGTH = 2000;
+const MIN_QUERY_INTERVAL_MS = 2000;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minute cache
+let lastQueryTime = 0;
+
+// In-memory query result cache
+const queryCache = new Map<string, { result: RagQueryResult; timestamp: number }>();
+
+function getCacheKey(query: string): string {
+  return query.toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+function getCachedResult(query: string): RagQueryResult | null {
+  const key = getCacheKey(query);
+  const entry = queryCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    queryCache.delete(key);
+    return null;
+  }
+  return entry.result;
+}
+
+function setCachedResult(query: string, result: RagQueryResult): void {
+  const key = getCacheKey(query);
+  queryCache.set(key, { result, timestamp: Date.now() });
+  // Evict old entries if cache grows too large
+  if (queryCache.size > 50) {
+    const oldest = queryCache.keys().next().value;
+    if (oldest) queryCache.delete(oldest);
+  }
+}
+
 // crypto.randomUUID() requires secure context (HTTPS). Fallback for HTTP.
 function generateId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -120,6 +153,34 @@ export const useAppStore = create<AppState>((set, get) => ({
   queryError: null,
 
   submitQuery: async (queryText: string) => {
+    const trimmed = queryText.trim();
+    if (!trimmed) return;
+    if (trimmed.length > MAX_QUERY_LENGTH) {
+      set({ queryError: `Query must be under ${MAX_QUERY_LENGTH} characters` });
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastQueryTime < MIN_QUERY_INTERVAL_MS) {
+      set({ queryError: "Please wait a moment before submitting another query" });
+      return;
+    }
+    lastQueryTime = now;
+
+    // Check cache first
+    const cached = getCachedResult(trimmed);
+    if (cached) {
+      set((state) => ({
+        currentQuery: cached,
+        queryLoading: false,
+        queryError: null,
+        selectedSource: null,
+        sourceArticles: [],
+        recentQueries: [cached, ...state.recentQueries.filter((q) => q.id !== cached.id).slice(0, 19)],
+      }));
+      return;
+    }
+
     set({ queryLoading: true, queryError: null, selectedSource: null, sourceArticles: [] });
 
     const queryId = generateId();
@@ -129,26 +190,29 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (user) {
       await supabase
         .from("queries")
-        .insert({ id: queryId, query_text: queryText, user_id: user.id, is_saved: false });
+        .insert({ id: queryId, query_text: trimmed, user_id: user.id, is_saved: false });
     }
 
     // Call n8n RAG pipeline + Web Search in parallel
     try {
       const [rag, webSearch] = await Promise.all([
-        queryRagPipeline(queryText, queryId),
-        queryWebSearch(queryText, queryId).catch(() => null),
+        queryRagPipeline(trimmed, queryId),
+        queryWebSearch(trimmed, queryId).catch((e) => { console.error("Web search failed:", e); return null; }),
       ]);
       const analysis = mapRagResponseToAnalysis(rag);
 
       const newQuery: RagQueryResult = {
         id: queryId,
-        user_id: "",
-        query_text: queryText,
+        user_id: useAuthStore.getState().user?.id ?? "",
+        query_text: trimmed,
         is_saved: false,
         created_at: new Date().toISOString(),
         analysis,
         webResults: webSearch?.web_results ?? [],
       };
+
+      // Cache the result for fast re-queries
+      setCachedResult(trimmed, newQuery);
 
       // Update current query and prepend to recent queries
       set((state) => ({
@@ -181,10 +245,10 @@ export const useAppStore = create<AppState>((set, get) => ({
               position: c.position,
             }));
             if (citationRows.length > 0) {
-              supabase.from("citations").insert(citationRows).then(() => {}).catch(() => {});
+              supabase.from("citations").insert(citationRows).then(() => {}).catch((e) => console.error("Citation insert failed:", e));
             }
           })
-          .catch(() => {});
+          .catch((e) => console.error("Analysis insert failed:", e));
       }
     } catch (err) {
       set({

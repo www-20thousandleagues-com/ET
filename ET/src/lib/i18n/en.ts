@@ -17,6 +17,8 @@ export const en = {
     notHelpful: "Not helpful",
     allSources: "All sources",
     noSourcesConfigured: "No sources configured",
+    errorTitle: "Something went wrong",
+    errorReload: "Reload",
   },
   auth: {
     logIn: "Log in",

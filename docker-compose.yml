@@ -16,7 +16,7 @@ services:
         limits:
           memory: 256M
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:80/"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -29,6 +29,7 @@ services:
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
+      - N8N_TRUST_PROXY=true
       - WEBHOOK_URL=https://n8n.20thousandleagues.com/
       - N8N_PUBLIC_API_ENABLED=true
       - TAVILY_API_KEY=${TAVILY_API_KEY}

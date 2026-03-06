@@ -2,6 +2,7 @@ import { useEffect, Suspense, lazy, Component, type ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { useAuthStore } from "@/stores/auth";
+import { useLocaleStore } from "@/stores/locale";
 import { ProtectedRoute } from "@/app/components/ProtectedRoute";
 
 const AuthPage = lazy(() => import("@/pages/AuthPage").then((m) => ({ default: m.AuthPage })));
@@ -16,16 +17,17 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
   render() {
     if (this.state.error) {
+      const t = useLocaleStore.getState().t;
       return (
         <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
           <div className="text-center max-w-md p-8">
-            <h1 className="text-2xl font-bold mb-2">Something went wrong</h1>
+            <h1 className="text-2xl font-bold mb-2">{t.common.errorTitle}</h1>
             <p className="text-muted-foreground mb-4">{this.state.error.message}</p>
             <button
               onClick={() => { this.setState({ error: null }); window.location.reload(); }}
               className="px-4 py-2 bg-foreground text-background rounded hover:opacity-90 transition-opacity"
             >
-              Reload
+              {t.common.errorReload}
             </button>
           </div>
         </div>
@@ -36,9 +38,10 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 function LoadingFallback() {
+  const t = useLocaleStore((s) => s.t);
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-muted-foreground text-sm">Loading...</div>
+      <div className="text-muted-foreground text-sm">{t.common.loading}</div>
     </div>
   );
 }

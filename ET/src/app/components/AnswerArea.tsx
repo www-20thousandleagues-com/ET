@@ -13,6 +13,15 @@ function getConfidenceLabel(confidence: number, t: ReturnType<typeof useLocaleSt
   return t.answer.low;
 }
 
+function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url, window.location.origin);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -86,7 +95,7 @@ function SourceArticleView() {
             {sourceArticles.map((article) => (
               <a
                 key={article.id}
-                href={article.url}
+                href={isSafeUrl(article.url) ? article.url : "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block p-4 border-2 border-border rounded hover:border-brand transition-colors group bg-card"
@@ -176,7 +185,7 @@ function CitationList({ citations, sortBy, t }: { citations: RagCitation[]; sort
               <p className="text-xs text-muted-foreground leading-relaxed">{citation.excerpt}</p>
             </div>
             <a
-              href={citation.url}
+              href={isSafeUrl(citation.url) ? citation.url : "#"}
               className="flex-shrink-0 p-2 opacity-0 group-hover:opacity-100 hover:bg-accent rounded transition-all"
               target="_blank"
               rel="noopener noreferrer"
@@ -204,7 +213,7 @@ function WebResultsList({ results, t }: { results: WebResult[]; t: ReturnType<ty
         {results.map((r, i) => (
           <a
             key={`${r.url}-${i}`}
-            href={r.url}
+            href={isSafeUrl(r.url) ? r.url : "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="block p-4 border-2 border-border rounded hover:border-brand transition-colors group bg-card"

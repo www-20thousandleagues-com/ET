@@ -24,7 +24,7 @@ export function LeftNav() {
       <div className="p-6 border-b border-stone-200 dark:border-stone-800">
         <div className="mb-4">
           <ImageWithFallback
-            src="https://images.squarespace-cdn.com/content/v1/6556194e9cc0e30b3030a441/78761e90-5e4a-4a8b-9224-6fdb54cde2c9/Et_Prim%E2%94%9C%C2%AAr_Vertikalt_Logo_Sort_R%E2%94%9C%E2%95%95d_RGB.png?format=1500w"
+            src="/logo.png"
             alt="Et Primaer Logo"
             className="h-16 w-auto object-contain object-left dark:invert"
           />

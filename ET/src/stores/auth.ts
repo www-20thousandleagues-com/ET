@@ -131,8 +131,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // No session — show auth page
         set({ loading: false, initialized: true });
       }
-    } catch {
-      // Any error — show auth page rather than spinner
+    } catch (e) {
+      console.error("Auth initialization error:", e);
       set({ user: null, session: null, profile: null, loading: false, initialized: true });
     }
 
@@ -171,7 +171,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       authSubscription.unsubscribe();
       authSubscription = null;
     }
-    await supabase.auth.signOut().catch(() => {});
+    await supabase.auth.signOut().catch((e) => console.error("Sign-out error:", e));
     set({ user: null, session: null, profile: null });
     // Reset app store to clear user-scoped data
     const { useAppStore } = await import("@/stores/app");

@@ -19,6 +19,8 @@ export const da: typeof en = {
     notHelpful: "Ikke nyttig",
     allSources: "Alle kilder",
     noSourcesConfigured: "Ingen kilder konfigureret",
+    errorTitle: "Noget gik galt",
+    errorReload: "Genindlaes",
   },
   auth: {
     logIn: "Log ind",
