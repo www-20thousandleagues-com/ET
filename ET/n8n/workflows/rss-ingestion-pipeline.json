@@ -4,14 +4,28 @@
     {
       "parameters": {
         "rule": {
-          "interval": [{ "field": "minutes", "minutesInterval": 5 }]
+          "interval": [{ "field": "hours", "hoursInterval": 2 }]
         }
       },
       "id": "schedule-trigger",
       "name": "Every 2 Hours",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 0]
+      "position": [0, -100]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jaegeren-ingest",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "On-Demand Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 100],
+      "webhookId": "jaegeren-ingest"
     },
     {
       "parameters": {
@@ -34,7 +48,7 @@
       "name": "Fetch Source IDs",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [110, 0],
+      "position": [220, 0],
       "notes": "Dynamically fetch source slug-to-ID mapping from Supabase instead of hardcoding UUIDs."
     },
     {
@@ -45,7 +59,7 @@
       "name": "Feed List",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [330, 0]
+      "position": [440, 0]
     },
     {
       "parameters": {
@@ -56,7 +70,7 @@
       "name": "Read RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1,
-      "position": [550, 0],
+      "position": [660, 0],
       "onError": "continueRegularOutput"
     },
     {
@@ -67,7 +81,7 @@
       "name": "Process Articles",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [770, 0]
+      "position": [880, 0]
     },
     {
       "parameters": {
@@ -87,7 +101,7 @@
       "name": "Filter Empty",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
-      "position": [990, 0]
+      "position": [1100, 0]
     },
     {
       "parameters": {
@@ -104,7 +118,7 @@
       "name": "Upsert to Pinecone",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1210, 0],
+      "position": [1320, -50],
       "credentials": {
         "httpHeaderAuth": {
           "id": "zahj6NSfAvBycdRM",
@@ -144,7 +158,7 @@
       "name": "Upsert to Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1210, 100],
+      "position": [1320, 100],
       "credentials": {
         "httpHeaderAuth": {
           "id": "rxTJneeMRIo3QxCM",
@@ -152,10 +166,27 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok', message: 'RSS ingestion completed', timestamp: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "webhook-response",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1540, 100]
     }
   ],
   "connections": {
     "Every 2 Hours": {
+      "main": [
+        [{ "node": "Fetch Source IDs", "type": "main", "index": 0 }]
+      ]
+    },
+    "On-Demand Webhook": {
       "main": [
         [{ "node": "Fetch Source IDs", "type": "main", "index": 0 }]
       ]
@@ -187,12 +218,17 @@
           { "node": "Upsert to Supabase", "type": "main", "index": 0 }
         ]
       ]
+    },
+    "Upsert to Supabase": {
+      "main": [
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1"
   },
   "meta": {
-    "description": "Polls RSS feeds every 2 hours, processes articles, and dual-writes to Pinecone (vector search) and Supabase (frontend display)"
+    "description": "Polls RSS feeds every 2 hours (or on-demand via POST /webhook/jaegeren-ingest). Processes articles and dual-writes to Pinecone (vector search) and Supabase (frontend display)."
   }
 }
