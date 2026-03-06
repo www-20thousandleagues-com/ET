@@ -18,22 +18,11 @@ type AuthState = {
   signOut: () => Promise<void>;
 };
 
-const DEV_USER: User = { id: "dev-user", email: "dev@jaegeren.local" } as User;
-const DEV_PROFILE: Profile = {
-  id: "dev-user",
-  email: "dev@jaegeren.local",
-  full_name: "Developer",
-  avatar_url: null,
-  role: "admin",
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
-function enterDevMode(set: (state: Partial<AuthState>) => void) {
+function enterUnconfiguredState(set: (state: Partial<AuthState>) => void) {
   set({
-    devMode: true,
-    user: DEV_USER,
-    profile: DEV_PROFILE,
+    devMode: false,
+    user: null,
+    profile: null,
     loading: false,
     initialized: true,
   });
@@ -51,7 +40,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (get().initialized) return;
 
     if (!isSupabaseConfigured()) {
-      enterDevMode(set);
+      enterUnconfiguredState(set);
       return;
     }
 
@@ -95,7 +84,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ loading: false, initialized: true });
       }
     } catch {
-      enterDevMode(set);
+      enterUnconfiguredState(set);
     }
   },
 

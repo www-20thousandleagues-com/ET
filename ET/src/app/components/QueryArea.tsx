@@ -37,7 +37,7 @@ export function QueryArea() {
 
   // Derive quick queries from recent article titles (first 3 unique sources)
   const quickQueries = useMemo(() => {
-    if (recentArticles.length === 0) return [t.query.usTariff, t.query.chinaEv, t.query.euCarbon];
+    if (recentArticles.length === 0) return [];
     const seen = new Set<string>();
     const queries: string[] = [];
     for (const a of recentArticles) {
@@ -48,7 +48,7 @@ export function QueryArea() {
       }
     }
     return queries;
-  }, [recentArticles, t]);
+  }, [recentArticles]);
 
   return (
     <div className="border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 p-6">
@@ -77,20 +77,22 @@ export function QueryArea() {
           </button>
         </div>
       </div>
-      <div className="flex items-center gap-3 mt-3">
-        <span className="text-xs text-stone-600 dark:text-stone-400">{t.query.quickQueries}</span>
-        <div className="flex gap-2">
-          {quickQueries.map((q) => (
-            <button
-              key={q}
-              onClick={() => { setQuery(q); submitQuery(q); }}
-              className="px-3 py-1 text-xs border-2 border-black dark:border-white bg-transparent hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black rounded transition-colors"
-            >
-              {q}
-            </button>
-          ))}
+      {quickQueries.length > 0 && (
+        <div className="flex items-center gap-3 mt-3">
+          <span className="text-xs text-stone-600 dark:text-stone-400">{t.query.quickQueries}</span>
+          <div className="flex gap-2">
+            {quickQueries.map((q) => (
+              <button
+                key={q}
+                onClick={() => { setQuery(q); submitQuery(q); }}
+                className="px-3 py-1 text-xs border-2 border-black dark:border-white bg-transparent hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black rounded transition-colors"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
