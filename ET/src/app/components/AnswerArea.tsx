@@ -45,6 +45,7 @@ function SourceArticleView() {
   const sourceArticles = useAppStore((s) => s.sourceArticles);
   const sourceArticlesLoading = useAppStore((s) => s.sourceArticlesLoading);
   const clearSelectedSource = useAppStore((s) => s.clearSelectedSource);
+  const t = useLocaleStore((s) => s.t);
 
   if (!selectedSource) return null;
 
@@ -67,7 +68,7 @@ function SourceArticleView() {
           <button
             onClick={clearSelectedSource}
             className="p-1.5 rounded hover:bg-accent transition-colors"
-            aria-label="Go back"
+            aria-label={t.answer.goBack}
           >
             <ArrowLeft className="size-4 text-muted-foreground" />
           </button>
@@ -76,7 +77,7 @@ function SourceArticleView() {
             <h2 className="text-lg font-bold text-foreground">{selectedSource.name}</h2>
           </div>
           <span className="text-sm text-muted-foreground">
-            {sourceArticles.length} {sourceArticles.length === 1 ? "article" : "articles"}
+            {sourceArticles.length} {sourceArticles.length === 1 ? t.answer.article : t.answer.articles}
           </span>
         </div>
 
@@ -109,7 +110,7 @@ function SourceArticleView() {
         ) : (
           <div className="text-center py-12">
             <SearchX className="size-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">No articles found for this source.</p>
+            <p className="text-sm text-muted-foreground">{t.answer.noArticlesForSource}</p>
           </div>
         )}
       </div>
@@ -129,16 +130,16 @@ function MethodologyModal({ onClose, sourceCount }: { onClose: () => void; sourc
             <Info className="size-5 text-brand" />
             <h3 className="font-bold text-foreground">{t.answer.viewMethodology}</h3>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-accent rounded" aria-label="Close">
+          <button onClick={onClose} className="p-1 hover:bg-accent rounded" aria-label={t.answer.close}>
             <X className="size-4" />
           </button>
         </div>
         <div className="space-y-3 text-sm text-muted-foreground">
-          <p><strong>1. Vector Search:</strong> Your query is embedded and matched against indexed articles in Pinecone.</p>
-          <p><strong>2. Reranking:</strong> Top results are reranked to select the most relevant passages.</p>
-          <p><strong>3. AI Synthesis:</strong> Claude synthesizes an analysis from the retrieved context, with inline citation markers [1], [2], [3].</p>
-          <p><strong>4. Confidence Score:</strong> Based on source agreement, recency, and coverage breadth. Above 70% = High confidence.</p>
-          <p className="text-xs text-muted-foreground pt-2 border-t border-border">Sources are ingested every 2 hours from {sourceCount} active feeds via automated RSS pipeline.</p>
+          <p><strong>1. Vector Search:</strong> {t.answer.methodologyVectorSearch}</p>
+          <p><strong>2. Reranking:</strong> {t.answer.methodologyReranking}</p>
+          <p><strong>3. AI Synthesis:</strong> {t.answer.methodologySynthesis}</p>
+          <p><strong>4. Confidence Score:</strong> {t.answer.methodologyConfidence}</p>
+          <p className="text-xs text-muted-foreground pt-2 border-t border-border">{t.answer.methodologyFooter.replace("{count}", String(sourceCount))}</p>
         </div>
       </div>
     </>
@@ -190,13 +191,13 @@ function CitationList({ citations, sortBy, t }: { citations: RagCitation[]; sort
   );
 }
 
-function WebResultsList({ results }: { results: WebResult[] }) {
+function WebResultsList({ results, t }: { results: WebResult[]; t: ReturnType<typeof useLocaleStore.getState>["t"] }) {
   if (results.length === 0) return null;
   return (
     <div className="mt-8">
       <div className="flex items-center gap-2 mb-4">
         <Globe className="size-4 text-brand" />
-        <h3 className="text-sm font-bold text-foreground">Live Web Results</h3>
+        <h3 className="text-sm font-bold text-foreground">{t.answer.liveWebResults}</h3>
         <span className="text-xs text-muted-foreground">({results.length})</span>
       </div>
       <div className="space-y-3">
@@ -212,7 +213,7 @@ function WebResultsList({ results }: { results: WebResult[] }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold text-foreground bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded">
-                    Web
+                    {t.answer.web}
                   </span>
                   {r.published_date && (
                     <span className="text-xs text-muted-foreground">
@@ -370,7 +371,7 @@ export function AnswerArea() {
       <div className="flex-1 flex items-center justify-center bg-background">
         <div className="text-center max-w-md">
           <AlertTriangle className="size-12 text-brand mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-muted-foreground mb-2">Analysis failed</h3>
+          <h3 className="text-lg font-medium text-muted-foreground mb-2">{t.answer.analysisFailed}</h3>
           <p className="text-sm text-muted-foreground">{queryError}</p>
         </div>
       </div>
@@ -448,7 +449,7 @@ export function AnswerArea() {
                           {t.common.exportMd}
                         </button>
                         <button onClick={() => handleExport("txt")} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors">
-                          Export as Text
+                          {t.answer.exportText}
                         </button>
                         <div className="border-t border-border my-1" />
                         <button onClick={() => handleExport("email")} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors">
@@ -478,7 +479,7 @@ export function AnswerArea() {
                   <button
                     onClick={() => setActiveMenu(activeMenu === "filter" ? null : "filter")}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs border-2 border-foreground bg-transparent hover:bg-foreground hover:text-background rounded transition-colors"
-                    aria-label="Filter by source"
+                    aria-label={t.answer.filterBySource}
                   >
                     <Filter className="size-3.5" />
                     <span>{filterSource === "all" ? t.common.allSources : filterSource}</span>
@@ -509,7 +510,7 @@ export function AnswerArea() {
                   <button
                     onClick={() => setActiveMenu(activeMenu === "sort" ? null : "sort")}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs border-2 border-foreground bg-transparent hover:bg-foreground hover:text-background rounded transition-colors"
-                    aria-label="Sort citations"
+                    aria-label={t.answer.sortCitations}
                   >
                     <ArrowUpDown className="size-3.5" />
                     <span>{sortLabels[sortBy]}</span>
@@ -542,7 +543,7 @@ export function AnswerArea() {
         )}
 
         {/* Web search results */}
-        <WebResultsList results={webResults} />
+        <WebResultsList results={webResults} t={t} />
 
         {/* Confidence metadata */}
         {analysis && (
