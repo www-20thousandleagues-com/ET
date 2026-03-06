@@ -24,7 +24,7 @@ services:
   n8n:
     image: n8nio/n8n:2.10.4
     ports:
-      - "127.0.0.1:5678:5678"
+      - "5678:5678"  # Firewalled via iptables DOCKER-USER chain (only 95.217.157.103 + localhost)
     environment:
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
