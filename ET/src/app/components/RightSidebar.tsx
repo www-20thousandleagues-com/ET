@@ -1,4 +1,4 @@
-import { TrendingUp, Newspaper } from "lucide-react";
+import { Send, TrendingUp, Newspaper } from "lucide-react";
 import { useLocaleStore } from "@/stores/locale";
 import { useAppStore } from "@/stores/app";
 
@@ -7,9 +7,20 @@ export function RightSidebar() {
   const sources = useAppStore((s) => s.sources);
   const recentArticles = useAppStore((s) => s.recentArticles);
   const queryCountToday = useAppStore((s) => s.queryCountToday);
+  const currentQuery = useAppStore((s) => s.currentQuery);
   const submitQuery = useAppStore((s) => s.submitQuery);
 
   const totalArticles = sources.reduce((sum, s) => sum + s.article_count, 0);
+
+  const handleSendToAnalyst = () => {
+    const analysis = currentQuery?.analysis;
+    const queryText = currentQuery?.query_text ?? "Jaegeren Analysis";
+    const body = analysis
+      ? `Query: ${queryText}\n\n${analysis.content}\n\nSources: ${analysis.primary_source_count} primary, ${analysis.supporting_source_count} supporting\nConfidence: ${analysis.confidence}%`
+      : `Please review the latest intelligence briefing.\n\nSources monitored: ${sources.length}\nTotal articles: ${totalArticles}`;
+    const subject = encodeURIComponent(`Jaegeren: ${queryText}`);
+    window.open(`mailto:?subject=${subject}&body=${encodeURIComponent(body)}`);
+  };
 
   // Top sources ranked by article count
   const topSources = sources
@@ -23,6 +34,15 @@ export function RightSidebar() {
   return (
     <aside className="w-80 border-l border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex flex-col h-screen overflow-y-auto">
       <div className="p-6">
+        {/* Send to Analyst CTA */}
+        <button
+          onClick={handleSendToAnalyst}
+          className="w-full px-4 py-3 bg-[#E94E3D] text-white rounded hover:bg-[#d43d2d] transition-colors flex items-center justify-center gap-2 mb-6 font-medium"
+        >
+          <Send className="size-4" />
+          <span>{t.sidebar.sendToAnalyst}</span>
+        </button>
+
         {/* Latest Articles */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
