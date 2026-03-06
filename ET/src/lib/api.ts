@@ -56,11 +56,17 @@ export async function queryRagPipeline(
     throw new Error("VITE_N8N_WEBHOOK_URL not configured");
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+
   const res = await fetch(`${N8N_WEBHOOK_URL}/jaegeren-query`, {
     method: "POST",
     headers: buildHeaders(),
     body: JSON.stringify({ query_text: queryText, query_id: queryId }),
+    signal: controller.signal,
   });
+
+  clearTimeout(timeout);
 
   if (!res.ok) {
     throw new Error(`RAG pipeline error: ${res.status}`);
@@ -78,11 +84,17 @@ export async function queryWebSearch(
   }
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
     const res = await fetch(`${N8N_WEBHOOK_URL}/jaegeren-websearch`, {
       method: "POST",
       headers: buildHeaders(),
       body: JSON.stringify({ query_text: queryText, query_id: queryId }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     if (!res.ok) return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
     return res.json();

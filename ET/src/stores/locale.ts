@@ -17,7 +17,10 @@ export const useLocaleStore = create<LocaleState>()(
   persist(
     (set, get) => ({
       locale: "en",
-      setLocale: (locale) => set({ locale, t: translations[locale] }),
+      setLocale: (locale) => {
+        document.documentElement.lang = locale;
+        set({ locale, t: translations[locale] });
+      },
       t: translations["en"],
     }),
     {
@@ -25,6 +28,7 @@ export const useLocaleStore = create<LocaleState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.t = translations[state.locale];
+          document.documentElement.lang = state.locale;
         }
       },
     }

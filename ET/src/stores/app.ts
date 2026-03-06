@@ -3,6 +3,7 @@ import type { Source } from "@/types/database";
 import type { RagQueryResult, RagAnalysis, RagCitation } from "@/types/database";
 import { supabase } from "@/lib/supabase";
 import { queryRagPipeline, queryWebSearch, type RagResponse } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth";
 
 // crypto.randomUUID() requires secure context (HTTPS). Fallback for HTTP.
 function generateId(): string {
@@ -90,6 +91,9 @@ type AppState = {
   clearSelectedSource: () => void;
   showAllSources: boolean;
   toggleShowAllSources: () => void;
+
+  // Reset all state (called on sign-out)
+  resetStore: () => void;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -99,11 +103,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchSources: async () => {
     set({ sourcesLoading: true });
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("sources")
         .select("*")
         .eq("is_active", true)
         .order("name");
+      if (error) throw error;
       set({ sources: data ?? [], sourcesLoading: false });
     } catch {
       set({ sources: [], sourcesLoading: false });
@@ -120,15 +125,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     const queryId = generateId();
 
     // Save query to Supabase in background (non-blocking)
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        supabase
-          .from("queries")
-          .insert({ query_text: queryText, user_id: user.id, is_saved: false })
-          .then(() => {})
-          .catch(() => {});
-      }
-    }).catch(() => {});
+    const user = useAuthStore.getState().user;
+    if (user) {
+      supabase
+        .from("queries")
+        .insert({ query_text: queryText, user_id: user.id, is_saved: false })
+        .then(() => {})
+        .catch(() => {});
+    }
 
     // Call n8n RAG pipeline + Web Search in parallel
     try {
@@ -156,8 +160,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
 
       // Persist analysis + citations to Supabase in background
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (!user) return;
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
         supabase
           .from("analyses")
           .insert({
@@ -183,7 +187,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             }
           })
           .catch(() => {});
-      }).catch(() => {});
+      }
     } catch (err) {
       set({
         queryError: err instanceof Error ? err.message : "Query failed",
@@ -194,7 +198,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   submitFeedback: async (queryId: string, feedback: "up" | "down") => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = useAuthStore.getState().user;
       if (!user) return;
       // Save feedback — update the query's is_saved flag as a proxy
       // (A dedicated feedback table would be better long-term)
@@ -325,25 +329,43 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => ({ showAllSources: !state.showAllSources }));
   },
 
+  resetStore: () => {
+    set({
+      sources: [],
+      sourcesLoading: false,
+      currentQuery: null,
+      queryLoading: false,
+      queryError: null,
+      recentQueries: [],
+      recentArticles: [],
+      queryCountToday: 0,
+      selectedSource: null,
+      sourceArticles: [],
+      sourceArticlesLoading: false,
+      showAllSources: false,
+    });
+  },
+
   queryCountToday: 0,
 
   fetchQueryCountToday: async () => {
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Use UTC midnight for consistent server-side filtering
+      const now = new Date();
+      const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
-      // Get current user to scope the count
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = useAuthStore.getState().user;
       let query = supabase
         .from("queries")
         .select("*", { count: "exact", head: true })
-        .gte("created_at", today.toISOString());
+        .gte("created_at", todayUTC.toISOString());
 
       if (user) {
         query = query.eq("user_id", user.id);
       }
 
-      const { count } = await query;
+      const { count, error } = await query;
+      if (error) throw error;
       set({ queryCountToday: count ?? 0 });
     } catch {
       set({ queryCountToday: 0 });

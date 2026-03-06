@@ -5,6 +5,27 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 let authSubscription: Subscription | null = null;
 
+/** Sanitize Supabase auth errors to avoid leaking internal details */
+function sanitizeAuthError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("invalid login credentials") || lower.includes("invalid_credentials")) {
+    return "Invalid email or password";
+  }
+  if (lower.includes("email not confirmed")) {
+    return "Please confirm your email before logging in";
+  }
+  if (lower.includes("user already registered")) {
+    return "An account with this email already exists";
+  }
+  if (lower.includes("password") && lower.includes("characters")) {
+    return "Password must be at least 8 characters";
+  }
+  if (lower.includes("rate limit") || lower.includes("too many requests")) {
+    return "Too many attempts. Please try again later";
+  }
+  return "Authentication failed. Please try again";
+}
+
 type AuthState = {
   user: User | null;
   session: Session | null;
@@ -120,7 +141,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signIn: async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
+    if (error) return { error: sanitizeAuthError(error.message) };
     // Directly set user so we don't rely solely on onAuthStateChange
     if (data.session?.user) {
       const profile = await withTimeout(fetchProfile(data.session.user.id), 2000);
@@ -135,7 +156,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       password,
       options: { data: { full_name: fullName } },
     });
-    if (error) return { error: error.message };
+    if (error) return { error: sanitizeAuthError(error.message) };
     // Directly set user if auto-confirmed (no email verification)
     if (data.session?.user) {
       const profile = await withTimeout(fetchProfile(data.session.user.id), 2000);
@@ -145,7 +166,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    // Unsubscribe auth listener
+    if (authSubscription) {
+      authSubscription.unsubscribe();
+      authSubscription = null;
+    }
     await supabase.auth.signOut().catch(() => {});
     set({ user: null, session: null, profile: null });
+    // Reset app store to clear user-scoped data
+    const { useAppStore } = await import("@/stores/app");
+    useAppStore.getState().resetStore();
   },
 }));

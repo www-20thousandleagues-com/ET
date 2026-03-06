@@ -16,4 +16,26 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-router-dom') || id.includes('@remix-run') || id.includes('react-router')) {
+              return 'router';
+            }
+            if (id.includes('@supabase')) {
+              return 'supabase';
+            }
+            if (id.includes('lucide-react')) {
+              return 'ui';
+            }
+            if (id.includes('react-dom') || id.includes('/react/')) {
+              return 'vendor';
+            }
+          }
+        },
+      },
+    },
+  },
 })

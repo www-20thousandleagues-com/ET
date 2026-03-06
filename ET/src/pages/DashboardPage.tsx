@@ -21,8 +21,11 @@ export function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-white dark:bg-stone-950 overflow-hidden">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-black dark:focus:bg-stone-950 dark:focus:text-white">
+        Skip to main content
+      </a>
       <LeftNav />
-      <main className="flex-1 flex flex-col min-w-0">
+      <main id="main-content" className="flex-1 flex flex-col min-w-0">
         <SourceStrip />
         <QueryArea />
         <AnswerArea />

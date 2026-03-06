@@ -11,7 +11,13 @@ function getClient(): SupabaseClient<Database> {
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY");
     }
-    _supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+    _supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+    });
   }
   return _supabase;
 }

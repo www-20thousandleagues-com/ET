@@ -83,6 +83,7 @@ export function AuthPage() {
                 <input
                   id="fullName"
                   type="text"
+                  autoComplete="name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full px-4 py-3 border-2 border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-black dark:text-white rounded focus:outline-none focus:border-black dark:focus:border-white transition-colors"
@@ -99,6 +100,7 @@ export function AuthPage() {
               <input
                 id="email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-black dark:text-white rounded focus:outline-none focus:border-black dark:focus:border-white transition-colors"
@@ -114,16 +116,17 @@ export function AuthPage() {
               <input
                 id="password"
                 type="password"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-black dark:text-white rounded focus:outline-none focus:border-black dark:focus:border-white transition-colors"
                 placeholder={t.auth.passwordPlaceholder}
                 required
-                minLength={6}
+                minLength={8}
               />
             </div>
 
-            {error && <p className="text-sm text-[var(--brand)]">{error}</p>}
+            {error && <p role="alert" className="text-sm text-[var(--brand)]">{error}</p>}
 
             <button
               type="submit"
