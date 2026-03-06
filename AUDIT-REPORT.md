@@ -11,15 +11,15 @@
 
 Jaegeren is a geo-economic intelligence platform that ingests news from 18 RSS sources, indexes them in Pinecone vector search, and provides AI-powered analysis via Claude. The platform is **functional but has significant gaps** that prevent it from being production-ready.
 
-### Overall Health Score: 6/10
+### Overall Health Score: 5/10
 
 | Area | Score | Status |
 |------|-------|--------|
 | Infrastructure | 7/10 | Solid, some security gaps |
 | Frontend App | 7/10 | Clean code, zero TS errors, some UX gaps |
-| n8n Workflows | 5/10 | Core works but 9/18 sources have 0 articles |
+| n8n Workflows | 4/10 | Core works but 9/18 sources broken, hardcoded secrets |
 | Data Pipeline | 4/10 | Half of sources not ingesting, env vars missing |
-| Security | 6/10 | Headers good, SSL self-signed, root SSH enabled |
+| Security | 3/10 | API keys in plaintext in workflows, .env in git, SSL self-signed |
 | CI/CD | 7/10 | Pipeline exists, needs secrets configured |
 | Monitoring | 2/10 | No alerting, no uptime monitoring |
 | Backups | 7/10 | Daily cron configured, tested working |
@@ -116,6 +116,14 @@ Jaegeren is a geo-economic intelligence platform that ingests news from 18 RSS s
 - No cache invalidation when new articles are ingested
 - Auth timeout (3s) could race with `onAuthStateChange` listener registration
 
+**Responsive Design:**
+- `RightSidebar` component has no mobile/tablet responsive styles — breaks on small screens
+- Source scroll strip not tested on touch devices
+
+**Dependencies:**
+- Unused packages: `sonner` (toast library, not imported anywhere), `tw-animate-css`
+- Should be removed to reduce bundle size
+
 **Missing Features for Core Offering:**
 - No streaming responses (user waits 10-15s for full response)
 - No query history persistence UI (data saved to Supabase but no way to browse)
@@ -183,7 +191,9 @@ These are referenced in `docker-compose.yml` as `${VAR}` but **not defined in `.
 - **No error handling nodes** — if Pinecone or Claude API fails, workflow crashes
 - **No retry logic** on external API calls
 - **Webhook-test endpoints** exposed via nginx — should be disabled in production
-- **Exported JSON files** in repo are outdated vs. live workflows
+- **Exported JSON files** in repo are outdated vs. live workflows (live has hardcoded secrets, exports use env vars)
+- **Schedule mismatch**: RSS runs every 30 min (live) vs. every 2 hours (exported JSON)
+- **Duplicate Web Search Pipeline**: Active workflow has hardcoded keys; inactive copy uses proper env vars
 - RSS ingestion runs every 30 min but only processes ~10 articles per feed — should batch more
 
 ### Stored Credentials
@@ -232,6 +242,16 @@ These are referenced in `docker-compose.yml` as `${VAR}` but **not defined in `.
 - [ ] **Port 3000** exposed to all interfaces (should be localhost only, behind nginx)
 - [ ] **No CSRF protection** on state-changing webhook requests
 
+### CRITICAL — Hardcoded API Keys in Live n8n Workflows
+- [ ] **Tavily API key** hardcoded in plaintext in Web Search Pipeline (workflow SgDtQkBCBlfckg4y)
+- [ ] **SerpAPI key** hardcoded in plaintext in Web Search Pipeline (same workflow)
+- [ ] **Supabase JWT** hardcoded in plaintext in RSS Ingestion Pipeline (workflow COwsIcwHmmBzS2MW)
+- [ ] **Duplicate Web Search Pipeline**: Active one (SgDtQkBCBlfckg4y) uses hardcoded keys; inactive one (WbSrch7TavilySrp) correctly uses env vars — should swap which is active
+- [ ] **Configuration drift**: Live workflows have diverged from exported JSON files in repo — live has hardcoded secrets while exports use `$env.*` references
+- [ ] **`.env` file committed to git repo** with Supabase credentials — should be in `.gitignore`
+
+**Action Required:** Migrate all hardcoded keys to n8n credential store or environment variables. Rotate all exposed keys immediately. Remove `.env` from git history.
+
 ---
 
 ## 6. CI/CD & DevOps
@@ -264,11 +284,14 @@ The core offering is: **Ask a question about geo-economics → get AI-analyzed a
 
 ### What's Missing (Priority Order)
 
-#### P0 — Must Fix (Broken)
-1. **9 of 18 sources not ingesting** — half the intelligence is missing
-2. **Web search API keys not configured** — Tavily/SerpAPI env vars empty
-3. **SSL certificates** — self-signed certs break user trust
-4. **Old compose file with exposed secrets** — delete `/opt/jaegeren/docker-compose.yml`
+#### P0 — Must Fix (Broken / Security Critical)
+1. **Hardcoded API keys in live n8n workflows** — Tavily, SerpAPI, and Supabase JWT exposed in plaintext in workflow code nodes. Must migrate to credential store and rotate keys immediately
+2. **`.env` committed to git** — Supabase credentials in version history. Add to `.gitignore`, remove from git history, rotate keys
+3. **9 of 18 sources not ingesting** — half the intelligence is missing
+4. **Web search API keys not configured** — Tavily/SerpAPI env vars empty in Docker (though hardcoded in workflows)
+5. **SSL certificates** — self-signed certs break user trust
+6. **Old compose file with exposed secrets** — delete `/opt/jaegeren/docker-compose.yml`
+7. **Configuration drift** — live n8n workflows diverged from exported JSON; re-export after fixing secrets
 
 #### P1 — Critical for Core Value
 1. **Streaming responses** — 10-15s wait with no feedback is unacceptable UX
@@ -297,24 +320,36 @@ The core offering is: **Ask a question about geo-economics → get AI-analyzed a
 
 ## 8. IMMEDIATE ACTION ITEMS
 
-### Today (30 minutes)
+### Today (URGENT — Security)
 ```bash
-# 1. Delete stale containers and old compose file
-docker rm jaegeren-app jaegeren-n8n
-# Review then delete: /opt/jaegeren/docker-compose.yml (contains hardcoded secrets)
+# 1. CRITICAL: Migrate hardcoded API keys out of n8n workflows
+#    - Open n8n UI → Web Search Pipeline (SgDtQkBCBlfckg4y)
+#    - Replace hardcoded Tavily/SerpAPI keys with $env.TAVILY_API_KEY / $env.SERPAPI_API_KEY
+#    - Or: deactivate this workflow and activate WbSrch7TavilySrp (uses env vars correctly)
+#    - Open RSS Ingestion Pipeline → replace hardcoded Supabase JWT with credential reference
+#    - ROTATE ALL EXPOSED KEYS after migration
 
-# 2. Clean Docker resources (~9GB recoverable)
+# 2. CRITICAL: Remove .env from git and add to .gitignore
+echo '.env' >> /opt/jaegeren/repo/.gitignore
+cd /opt/jaegeren/repo && git rm --cached .env 2>/dev/null
+# Consider: git filter-branch or BFG to purge from history
+
+# 3. Delete stale containers and old compose file
+docker rm jaegeren-app jaegeren-n8n
+rm /opt/jaegeren/docker-compose.yml  # contains hardcoded secrets
+
+# 4. Clean Docker resources (~9GB recoverable)
 docker system prune -a --volumes  # after confirming no needed volumes
 
-# 3. Get real SSL certificates
+# 5. Get real SSL certificates
 sudo certbot --nginx -d et.20thousandleagues.com -d n8n.20thousandleagues.com
 
-# 4. Add swap space
+# 6. Add swap space
 sudo fallocate -l 2G /swapfile
 sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
-# 5. Disable root SSH
+# 7. Disable root SSH
 sudo sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
 sudo systemctl restart sshd
 ```
