@@ -22,7 +22,7 @@ services:
       retries: 3
 
   n8n:
-    image: n8nio/n8n:1.84.1
+    image: n8nio/n8n:2.10.4
     ports:
       - "127.0.0.1:5678:5678"
     environment:
