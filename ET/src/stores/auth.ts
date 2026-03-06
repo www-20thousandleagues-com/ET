@@ -117,17 +117,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    // Directly set user so we don't rely solely on onAuthStateChange
+    if (data.session?.user) {
+      const profile = await withTimeout(fetchProfile(data.session.user.id), 2000);
+      set({ user: data.session.user, session: data.session, profile, loading: false, initialized: true });
+    }
+    return { error: null };
   },
 
   signUp: async (email, password, fullName) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
     });
-    return { error: error?.message ?? null };
+    if (error) return { error: error.message };
+    // Directly set user if auto-confirmed (no email verification)
+    if (data.session?.user) {
+      const profile = await withTimeout(fetchProfile(data.session.user.id), 2000);
+      set({ user: data.session.user, session: data.session, profile, loading: false, initialized: true });
+    }
+    return { error: null };
   },
 
   signOut: async () => {
