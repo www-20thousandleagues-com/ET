@@ -55,12 +55,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    // Hard timeout: if init takes > 8s, stop loading and show auth page
+    // Hard timeout: if init takes > 3s, stop loading and show auth page
     const timeout = setTimeout(() => {
       if (!get().initialized) {
         set({ user: null, session: null, profile: null, loading: false, initialized: true });
       }
-    }, 8000);
+    }, 3000);
 
     try {
       // Unsubscribe any previous listener
@@ -80,8 +80,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       authSubscription = subscription;
 
-      // Try to get current session (with 5s timeout to prevent hanging)
-      const sessionResult = await withTimeout(supabase.auth.getSession(), 5000);
+      // Try to get current session (with 2.5s timeout to prevent hanging)
+      const sessionResult = await withTimeout(supabase.auth.getSession(), 2500);
 
       // Timeout or error — show auth page
       if (!sessionResult) {
@@ -102,7 +102,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Valid session — fetch profile
       if (session?.user) {
-        const profile = await withTimeout(fetchProfile(session.user.id), 3000);
+        const profile = await withTimeout(fetchProfile(session.user.id), 2000);
         set({ user: session.user, session, profile, loading: false, initialized: true });
       } else {
         // No session — show auth page

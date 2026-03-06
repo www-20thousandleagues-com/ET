@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, initialized } = useAuthStore();
 
+  // Show brief spinner for max 2s while checking auth
   if (!initialized || loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-white dark:bg-stone-950">
