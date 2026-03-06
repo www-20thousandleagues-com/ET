@@ -68,14 +68,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             .select("*")
             .eq("id", session.user.id)
             .single();
-          set({ user: session.user, session, profile });
+          set({ user: session.user, session, profile, loading: false, initialized: true });
         } else {
-          set({ user: null, session: null, profile: null });
+          set({ user: null, session: null, profile: null, loading: false, initialized: true });
         }
       });
       authSubscription = subscription;
 
+      // Timeout guard: if getSession hangs, still mark as initialized
+      const timeout = setTimeout(() => {
+        if (!get().initialized) {
+          set({ loading: false, initialized: true });
+        }
+      }, 5000);
+
       const { data: { session } } = await supabase.auth.getSession();
+      clearTimeout(timeout);
 
       if (session?.user) {
         const { data: profile } = await supabase
