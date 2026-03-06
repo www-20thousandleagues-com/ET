@@ -1,6 +1,6 @@
-import type { en } from "./en";
+import type { Translations } from "./en";
 
-export const da: typeof en = {
+export const da: Translations = {
   common: {
     loading: "Indlaeser...",
     settings: "Indstillinger",
@@ -100,4 +100,4 @@ export const da: typeof en = {
     monitoredSources: "Overvaagede kilder",
     newArticles: "Nye artikler",
   },
-} as const;
+};

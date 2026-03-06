@@ -3,7 +3,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useAppStore } from "@/stores/app";
 import { useLocaleStore } from "@/stores/locale";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import type { RagAnalysis, RagCitation, WebResult } from "@/types/database";
+import type { RagCitation, WebResult } from "@/types/database";
 
 type SortOption = "date" | "relevance" | "source";
 
@@ -262,7 +262,7 @@ export function AnswerArea() {
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [showMethodology, setShowMethodology] = useState(false);
-  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Cleanup copied timer on unmount
   useEffect(() => {

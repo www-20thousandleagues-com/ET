@@ -1,21 +1,21 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { en } from "@/lib/i18n/en";
+import { en, type Translations } from "@/lib/i18n/en";
 import { da } from "@/lib/i18n/da";
 
 export type Locale = "en" | "da";
 
-const translations = { en, da } as const;
+const translations: Record<Locale, Translations> = { en, da };
 
 type LocaleState = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: typeof en;
+  t: Translations;
 };
 
 export const useLocaleStore = create<LocaleState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       locale: "en",
       setLocale: (locale) => {
         document.documentElement.lang = locale;

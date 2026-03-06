@@ -13,6 +13,7 @@ export type Database = {
         };
         Insert: Omit<Database["public"]["Tables"]["profiles"]["Row"], "created_at" | "updated_at">;
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Relationships: [];
       };
       sources: {
         Row: {
@@ -28,6 +29,7 @@ export type Database = {
         };
         Insert: Omit<Database["public"]["Tables"]["sources"]["Row"], "id" | "article_count" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["sources"]["Insert"]>;
+        Relationships: [];
       };
       articles: {
         Row: {
@@ -43,6 +45,13 @@ export type Database = {
         };
         Insert: Omit<Database["public"]["Tables"]["articles"]["Row"], "id" | "ingested_at">;
         Update: Partial<Database["public"]["Tables"]["articles"]["Insert"]>;
+        Relationships: [{
+          foreignKeyName: "articles_source_id_fkey";
+          columns: ["source_id"];
+          isOneToOne: false;
+          referencedRelation: "sources";
+          referencedColumns: ["id"];
+        }];
       };
       queries: {
         Row: {
@@ -52,8 +61,9 @@ export type Database = {
           is_saved: boolean;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["queries"]["Row"], "id" | "created_at">;
+        Insert: Omit<Database["public"]["Tables"]["queries"]["Row"], "created_at"> & { id?: string };
         Update: Partial<Database["public"]["Tables"]["queries"]["Insert"]>;
+        Relationships: [];
       };
       analyses: {
         Row: {
@@ -67,6 +77,13 @@ export type Database = {
         };
         Insert: Omit<Database["public"]["Tables"]["analyses"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["analyses"]["Insert"]>;
+        Relationships: [{
+          foreignKeyName: "analyses_query_id_fkey";
+          columns: ["query_id"];
+          isOneToOne: false;
+          referencedRelation: "queries";
+          referencedColumns: ["id"];
+        }];
       };
       citations: {
         Row: {
@@ -79,11 +96,25 @@ export type Database = {
         };
         Insert: Omit<Database["public"]["Tables"]["citations"]["Row"], "id">;
         Update: Partial<Database["public"]["Tables"]["citations"]["Insert"]>;
+        Relationships: [{
+          foreignKeyName: "citations_analysis_id_fkey";
+          columns: ["analysis_id"];
+          isOneToOne: false;
+          referencedRelation: "analyses";
+          referencedColumns: ["id"];
+        }, {
+          foreignKeyName: "citations_article_id_fkey";
+          columns: ["article_id"];
+          isOneToOne: false;
+          referencedRelation: "articles";
+          referencedColumns: ["id"];
+        }];
       };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 };
 

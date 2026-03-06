@@ -98,4 +98,7 @@ export const en = {
     monitoredSources: "Monitored sources",
     newArticles: "New articles",
   },
-} as const;
+};
+
+// Derive the translation type from the English locale (source of truth)
+export type Translations = { [K in keyof typeof en]: { [P in keyof (typeof en)[K]]: string } };

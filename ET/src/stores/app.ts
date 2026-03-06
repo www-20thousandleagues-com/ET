@@ -129,7 +129,7 @@ type AppState = {
   resetStore: () => void;
 };
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set) => ({
   sources: [],
   sourcesLoading: false,
 
@@ -142,7 +142,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         .eq("is_active", true)
         .order("name");
       if (error) throw error;
-      set({ sources: data ?? [], sourcesLoading: false });
+      set({ sources: (data as Source[]) ?? [], sourcesLoading: false });
     } catch {
       set({ sources: [], sourcesLoading: false });
     }
@@ -224,18 +224,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Persist analysis + citations to Supabase in background
       const currentUser = useAuthStore.getState().user;
       if (currentUser) {
-        supabase
-          .from("analyses")
-          .insert({
-            query_id: queryId,
-            content: analysis.content,
-            confidence: analysis.confidence,
-            primary_source_count: analysis.primary_source_count,
-            supporting_source_count: analysis.supporting_source_count,
-          })
-          .select("id")
-          .single()
-          .then(({ data: analysisRow }) => {
+        Promise.resolve(
+          supabase
+            .from("analyses")
+            .insert({
+              query_id: queryId,
+              content: analysis.content,
+              confidence: analysis.confidence,
+              primary_source_count: analysis.primary_source_count,
+              supporting_source_count: analysis.supporting_source_count,
+            })
+            .select("id")
+            .single()
+        ).then(({ data: analysisRow }) => {
             if (!analysisRow) return;
             const citationRows = analysis.citations.map((c) => ({
               analysis_id: analysisRow.id,
@@ -245,10 +246,10 @@ export const useAppStore = create<AppState>((set, get) => ({
               position: c.position,
             }));
             if (citationRows.length > 0) {
-              supabase.from("citations").insert(citationRows).then(() => {}).catch((e) => console.error("Citation insert failed:", e));
+              Promise.resolve(supabase.from("citations").insert(citationRows)).catch((e: unknown) => console.error("Citation insert failed:", e));
             }
           })
-          .catch((e) => console.error("Analysis insert failed:", e));
+          .catch((e: unknown) => console.error("Analysis insert failed:", e));
       }
     } catch (err) {
       set({
