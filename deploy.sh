@@ -4,7 +4,7 @@ set -euo pipefail
 
 LOG="/var/log/jaegeren-deploy.log"
 REPO="/opt/jaegeren/repo"
-COMPOSE_DIR="/opt/jaegeren"
+COMPOSE_DIR="/opt/jaegeren/repo"
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') — $1" | tee -a "$LOG"; }
 
