@@ -71,7 +71,7 @@ export function QueryArea() {
           <button
             onClick={handleSubmit}
             disabled={queryLoading || !query.trim()}
-            className="p-2 bg-[#E94E3D] text-white rounded hover:bg-[#d43d2d] transition-colors disabled:opacity-50"
+            className="p-2 bg-[var(--brand)] text-white rounded hover:bg-[var(--brand-hover)] transition-colors disabled:opacity-50"
           >
             {queryLoading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
           </button>

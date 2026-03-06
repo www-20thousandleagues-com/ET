@@ -1,4 +1,5 @@
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || "";
+const WEBHOOK_SECRET = import.meta.env.VITE_WEBHOOK_SECRET || "";
 
 export type RagResponse = {
   query_id: string;
@@ -29,9 +30,17 @@ export async function queryRagPipeline(
     throw new Error("VITE_N8N_WEBHOOK_URL not configured");
   }
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (WEBHOOK_SECRET) {
+    headers["x-webhook-secret"] = WEBHOOK_SECRET;
+  }
+
   const res = await fetch(`${N8N_WEBHOOK_URL}/jaegeren-query`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ query_text: queryText, query_id: queryId }),
   });
 

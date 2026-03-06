@@ -95,7 +95,7 @@ export type Query = Database["public"]["Tables"]["queries"]["Row"];
 export type Analysis = Database["public"]["Tables"]["analyses"]["Row"];
 export type Citation = Database["public"]["Tables"]["citations"]["Row"];
 
-// Joined types for UI
+// Joined types for UI (from Supabase joins)
 export type CitationWithArticle = Citation & {
   article: Article & { source: Source };
 };
@@ -106,4 +106,38 @@ export type AnalysisWithCitations = Analysis & {
 
 export type QueryWithAnalysis = Query & {
   analysis: AnalysisWithCitations | null;
+};
+
+// RAG pipeline response types (from n8n webhook — not full DB entities)
+export type RagCitation = {
+  id: string;
+  article_id: string;
+  relevance_score: number;
+  excerpt: string;
+  position: number;
+  title: string;
+  source_name: string;
+  source_slug: string;
+  published_at: string;
+  url: string;
+};
+
+export type RagAnalysis = {
+  id: string;
+  query_id: string;
+  content: string;
+  confidence: number;
+  primary_source_count: number;
+  supporting_source_count: number;
+  created_at: string;
+  citations: RagCitation[];
+};
+
+export type RagQueryResult = {
+  id: string;
+  user_id: string;
+  query_text: string;
+  is_saved: boolean;
+  created_at: string;
+  analysis: RagAnalysis | null;
 };

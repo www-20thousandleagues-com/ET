@@ -15,13 +15,37 @@
     },
     {
       "parameters": {
-        "jsCode": "// Define RSS feeds with Supabase source_id mapping\nconst sourceMap = {\n  ft: 'd0ac749d-907d-4fa0-904d-f6ad8ca20172',\n  scmp: 'a5bb0933-14d4-4dc8-95da-a37713ee57f0',\n  berlingske: '046503bd-d3bf-461d-9c47-052dcb6484cc',\n  borsen: '25d69042-724e-42c3-9ad4-b12bebcaccaf',\n  eurostat: 'f77291a4-fe31-45d0-9946-199d91589073',\n  economist: '8818a2b4-a41a-41c5-b450-f75614816790',\n  bbc: 'b9778921-2ebb-42a0-aea4-b70ba2af13bd',\n  nyt: 'c8285ccc-a2fe-4a1f-bfb4-f423d8c51b1d',\n  aljazeera: '132c5fbc-6a01-49fd-b59b-c57f0662030e'\n};\n\nconst feeds = [\n  { source_slug: 'scmp', name: 'South China Morning Post', url: 'https://www.scmp.com/rss/91/feed' },\n  { source_slug: 'bbc', name: 'BBC World News', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },\n  { source_slug: 'nyt', name: 'New York Times World', url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml' },\n  { source_slug: 'aljazeera', name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },\n  { source_slug: 'ft', name: 'Financial Times', url: 'https://www.ft.com/world?format=rss' },\n  { source_slug: 'berlingske', name: 'Berlingske', url: 'https://www.berlingske.dk/content/rss' },\n  { source_slug: 'borsen', name: 'Borsen', url: 'https://borsen.dk/rss/investor' },\n  { source_slug: 'economist-finance', name: 'The Economist (Finance)', url: 'https://www.economist.com/finance-and-economics/rss.xml' },\n  { source_slug: 'economist-europe', name: 'The Economist (Europe)', url: 'https://www.economist.com/europe/rss.xml' },\n  { source_slug: 'economist-asia', name: 'The Economist (Asia)', url: 'https://www.economist.com/asia/rss.xml' },\n  { source_slug: 'economist-business', name: 'The Economist (Business)', url: 'https://www.economist.com/business/rss.xml' },\n  { source_slug: 'eurostat', name: 'Eurostat', url: 'https://ec.europa.eu/eurostat/api/dissemination/catalogue/rss/en/statistics-update.rss' }\n];\n\nreturn feeds.map(f => ({\n  json: { ...f, source_id: sourceMap[f.source_slug] || sourceMap[f.source_slug.split('-')[0]] || '' }\n}));"
+        "method": "GET",
+        "url": "{{ $env.SUPABASE_URL }}/rest/v1/sources?select=id,slug&is_active=eq.true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "{{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-sources",
+      "name": "Fetch Source IDs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [110, 0],
+      "notes": "Dynamically fetch source slug-to-ID mapping from Supabase instead of hardcoding UUIDs."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build source slug -> ID map from Supabase, then define feeds\nconst sourcesData = $('Fetch Source IDs').first().json;\nconst sourceRows = Array.isArray(sourcesData) ? sourcesData : (sourcesData.body || []);\nconst sourceMap = {};\nfor (const s of sourceRows) { sourceMap[s.slug] = s.id; }\n\nconst feeds = [\n  { source_slug: 'scmp', name: 'South China Morning Post', url: 'https://www.scmp.com/rss/91/feed' },\n  { source_slug: 'bbc', name: 'BBC World News', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },\n  { source_slug: 'nyt', name: 'New York Times World', url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml' },\n  { source_slug: 'aljazeera', name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },\n  { source_slug: 'ft', name: 'Financial Times', url: 'https://www.ft.com/world?format=rss' },\n  { source_slug: 'berlingske', name: 'Berlingske', url: 'https://www.berlingske.dk/content/rss' },\n  { source_slug: 'borsen', name: 'Borsen', url: 'https://borsen.dk/rss/investor' },\n  { source_slug: 'economist-finance', name: 'The Economist (Finance)', url: 'https://www.economist.com/finance-and-economics/rss.xml' },\n  { source_slug: 'economist-europe', name: 'The Economist (Europe)', url: 'https://www.economist.com/europe/rss.xml' },\n  { source_slug: 'economist-asia', name: 'The Economist (Asia)', url: 'https://www.economist.com/asia/rss.xml' },\n  { source_slug: 'economist-business', name: 'The Economist (Business)', url: 'https://www.economist.com/business/rss.xml' },\n  { source_slug: 'eurostat', name: 'Eurostat', url: 'https://ec.europa.eu/eurostat/api/dissemination/catalogue/rss/en/statistics-update.rss' }\n];\n\nreturn feeds.map(f => ({\n  json: { ...f, source_id: sourceMap[f.source_slug] || sourceMap[f.source_slug.split('-')[0]] || '' }\n}));"
       },
       "id": "feed-list",
       "name": "Feed List",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 0]
+      "position": [330, 0]
     },
     {
       "parameters": {
@@ -32,18 +56,18 @@
       "name": "Read RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1,
-      "position": [440, 0],
+      "position": [550, 0],
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "// Process RSS items\nconst items = $input.all();\nconst sourceInfo = $('Feed List').first().json;\n\nconst articles = items\n  .filter(item => item.json.title && item.json.link)\n  .slice(0, 10)\n  .map(item => {\n    const content = (item.json['content:encoded'] || item.json.description || item.json.title)\n      .replace(/<[^>]*>/g, '').trim();\n    \n    // FNV-1a hash for unique ID\n    const urlBytes = new TextEncoder().encode(item.json.link);\n    let h = 0x811c9dc5;\n    for (const b of urlBytes) { h ^= b; h = Math.imul(h, 0x01000193); }\n    const urlHash = Math.abs(h).toString(16).padStart(8, '0');\n    const articleId = crypto.randomUUID();\n    \n    return {\n      json: {\n        // Pinecone fields\n        pinecone_id: `${sourceInfo.source_slug}-${urlHash}`,\n        article_id: articleId,\n        title: item.json.title.trim(),\n        url: item.json.link.trim(),\n        content: content.substring(0, 2000),\n        excerpt: content.substring(0, 300),\n        source: sourceInfo.name,\n        source_slug: sourceInfo.source_slug,\n        source_id: sourceInfo.source_id,\n        published_at: item.json.pubDate || new Date().toISOString()\n      }\n    };\n  });\n\nreturn articles.length > 0 ? articles : [{ json: { _skip: true } }];"
+        "jsCode": "// Process RSS items into article records\nconst items = $input.all();\nconst sourceInfo = $('Feed List').first().json;\n\nconst articles = items\n  .filter(item => item.json.title && item.json.link)\n  .slice(0, 10)\n  .map(item => {\n    const content = (item.json['content:encoded'] || item.json.description || item.json.title)\n      .replace(/<[^>]*>/g, '').trim();\n\n    // FNV-1a hash for Pinecone dedup ID\n    const urlBytes = new TextEncoder().encode(item.json.link);\n    let h = 0x811c9dc5;\n    for (const b of urlBytes) { h ^= b; h = Math.imul(h, 0x01000193); }\n    const urlHash = Math.abs(h).toString(16).padStart(8, '0');\n\n    // Deterministic UUID from URL hash (for Supabase dedup)\n    const pad = (s, n) => s.padStart(n, '0').slice(0, n);\n    const h1 = Math.abs(h).toString(16);\n    const h2 = Math.abs(h >>> 4).toString(16);\n    const h3 = Math.abs(h >>> 8).toString(16);\n    const h4 = Math.abs(h >>> 12).toString(16);\n    const h5 = Math.abs(h >>> 16).toString(16);\n    const articleId = `${pad(h1,8)}-${pad(h2,4)}-4${pad(h3,3)}-8${pad(h4,3)}-${pad(h5,12)}`;\n\n    return {\n      json: {\n        pinecone_id: `${sourceInfo.source_slug}-${urlHash}`,\n        article_id: articleId,\n        title: item.json.title.trim(),\n        url: item.json.link.trim(),\n        content: content.substring(0, 2000),\n        excerpt: content.substring(0, 300),\n        source: sourceInfo.name,\n        source_slug: sourceInfo.source_slug,\n        source_id: sourceInfo.source_id,\n        published_at: item.json.pubDate || new Date().toISOString()\n      }\n    };\n  });\n\nreturn articles.length > 0 ? articles : [{ json: { _skip: true } }];"
       },
       "id": "process-articles",
       "name": "Process Articles",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [660, 0]
+      "position": [770, 0]
     },
     {
       "parameters": {
@@ -63,7 +87,7 @@
       "name": "Filter Empty",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
-      "position": [880, 0]
+      "position": [990, 0]
     },
     {
       "parameters": {
@@ -80,7 +104,7 @@
       "name": "Upsert to Pinecone",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1100, 0],
+      "position": [1210, 0],
       "credentials": {
         "httpHeaderAuth": {
           "id": "zahj6NSfAvBycdRM",
@@ -91,7 +115,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://urppgmoexiuthsancgfj.supabase.co/rest/v1/articles",
+        "url": "{{ $env.SUPABASE_URL }}/rest/v1/articles",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
@@ -99,7 +123,11 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVycHBnbW9leGl1dGhzYW5jZ2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NDk1MzUsImV4cCI6MjA4ODIyNTUzNX0.skeaNpybGZp9c_q2g0AN9qEwPN_g4jIl4xrIcppVJcM"
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "apikey",
+              "value": "{{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
             },
             {
               "name": "Prefer",
@@ -116,11 +144,11 @@
       "name": "Upsert to Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1100, 100],
+      "position": [1210, 100],
       "credentials": {
         "httpHeaderAuth": {
           "id": "rxTJneeMRIo3QxCM",
-          "name": "Supabase Anon Key"
+          "name": "Supabase Service Role Key"
         }
       },
       "onError": "continueRegularOutput"
@@ -128,6 +156,11 @@
   ],
   "connections": {
     "Every 2 Hours": {
+      "main": [
+        [{ "node": "Fetch Source IDs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Source IDs": {
       "main": [
         [{ "node": "Feed List", "type": "main", "index": 0 }]
       ]

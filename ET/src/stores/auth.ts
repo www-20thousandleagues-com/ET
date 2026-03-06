@@ -1,7 +1,9 @@
 import { create } from "zustand";
-import type { User, Session } from "@supabase/supabase-js";
+import type { User, Session, Subscription } from "@supabase/supabase-js";
 import type { Profile } from "@/types/database";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+
+let authSubscription: Subscription | null = null;
 
 type AuthState = {
   user: User | null;
@@ -16,6 +18,27 @@ type AuthState = {
   signOut: () => Promise<void>;
 };
 
+const DEV_USER: User = { id: "dev-user", email: "dev@jaegeren.local" } as User;
+const DEV_PROFILE: Profile = {
+  id: "dev-user",
+  email: "dev@jaegeren.local",
+  full_name: "Developer",
+  avatar_url: null,
+  role: "admin",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+function enterDevMode(set: (state: Partial<AuthState>) => void) {
+  set({
+    devMode: true,
+    user: DEV_USER,
+    profile: DEV_PROFILE,
+    loading: false,
+    initialized: true,
+  });
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
@@ -27,27 +50,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialize: async () => {
     if (get().initialized) return;
 
-    // If Supabase isn't configured, enter dev mode (skip auth)
     if (!isSupabaseConfigured()) {
-      set({
-        devMode: true,
-        user: { id: "dev-user", email: "dev@jaegeren.local" } as User,
-        profile: {
-          id: "dev-user",
-          email: "dev@jaegeren.local",
-          full_name: "Developer",
-          avatar_url: null,
-          role: "admin",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        loading: false,
-        initialized: true,
-      });
+      enterDevMode(set);
       return;
     }
 
     try {
+      // Register listener first to avoid race window between getSession and auth events
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+          set({ user: session.user, session, profile });
+        } else {
+          set({ user: null, session: null, profile: null });
+        }
+      });
+      authSubscription = subscription;
+
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
@@ -56,42 +83,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .select("*")
           .eq("id", session.user.id)
           .single();
-
         set({ user: session.user, session, profile, loading: false, initialized: true });
       } else {
         set({ loading: false, initialized: true });
       }
-
-      supabase.auth.onAuthStateChange(async (_event, session) => {
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", session.user.id)
-            .single();
-
-          set({ user: session.user, session, profile });
-        } else {
-          set({ user: null, session: null, profile: null });
-        }
-      });
     } catch {
-      // Supabase unreachable — enter dev mode
-      set({
-        devMode: true,
-        user: { id: "dev-user", email: "dev@jaegeren.local" } as User,
-        profile: {
-          id: "dev-user",
-          email: "dev@jaegeren.local",
-          full_name: "Developer",
-          avatar_url: null,
-          role: "admin",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        loading: false,
-        initialized: true,
-      });
+      enterDevMode(set);
     }
   },
 

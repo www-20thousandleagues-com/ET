@@ -37,7 +37,7 @@ export function RightSidebar() {
         {/* Send to Analyst CTA */}
         <button
           onClick={handleSendToAnalyst}
-          className="w-full px-4 py-3 bg-[#E94E3D] text-white rounded hover:bg-[#d43d2d] transition-colors flex items-center justify-center gap-2 mb-6 font-medium"
+          className="w-full px-4 py-3 bg-[var(--brand)] text-white rounded hover:bg-[var(--brand-hover)] transition-colors flex items-center justify-center gap-2 mb-6 font-medium"
         >
           <Send className="size-4" />
           <span>{t.sidebar.sendToAnalyst}</span>
@@ -81,7 +81,7 @@ export function RightSidebar() {
                 className="w-full text-left p-3 rounded border-2 border-stone-200 dark:border-stone-700 hover:border-black dark:hover:border-white transition-colors flex items-center justify-between bg-white dark:bg-stone-900"
               >
                 <span className="text-sm text-stone-800 dark:text-stone-200">{source.name}</span>
-                <span className="text-xs font-bold text-[#E94E3D]">{source.article_count}</span>
+                <span className="text-xs font-bold text-[var(--brand)]">{source.article_count}</span>
               </button>
             ))}
           </div>

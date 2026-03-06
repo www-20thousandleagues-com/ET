@@ -42,7 +42,7 @@ export function AuthPage() {
           <p className="text-stone-400 mt-1">{t.nav.subtitle}</p>
         </div>
         <div className="space-y-6">
-          <blockquote className="text-lg text-stone-300 leading-relaxed border-l-2 border-[#E94E3D] pl-4">
+          <blockquote className="text-lg text-stone-300 leading-relaxed border-l-2 border-[var(--brand)] pl-4">
             "{t.auth.tagline}"
           </blockquote>
           <div className="flex items-center gap-6 text-sm text-stone-500">
@@ -63,7 +63,7 @@ export function AuthPage() {
 
         <div className="w-full max-w-sm">
           <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <Sparkles className="size-5 text-[#E94E3D]" />
+            <Sparkles className="size-5 text-[var(--brand)]" />
             <h1 className="text-xl font-bold text-black dark:text-white">Jaegeren</h1>
           </div>
 
@@ -123,7 +123,7 @@ export function AuthPage() {
               />
             </div>
 
-            {error && <p className="text-sm text-[#E94E3D]">{error}</p>}
+            {error && <p className="text-sm text-[var(--brand)]">{error}</p>}
 
             <button
               type="submit"
