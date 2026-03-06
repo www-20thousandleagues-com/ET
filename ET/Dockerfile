@@ -4,14 +4,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-ARG VITE_N8N_WEBHOOK_URL
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
-ENV VITE_N8N_WEBHOOK_URL=$VITE_N8N_WEBHOOK_URL
-
+# Vite reads VITE_* from .env file at build time — no ARG/ENV needed
 RUN pnpm build
 
 FROM nginx:1.27-alpine
