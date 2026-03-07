@@ -4,11 +4,15 @@ import type { RagQueryResult, RagAnalysis, RagCitation } from "@/types/database"
 import { supabase } from "@/lib/supabase";
 import { queryRagPipeline, queryWebSearch, type RagResponse } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
+import { useLocaleStore } from "@/stores/locale";
 
 const MAX_QUERY_LENGTH = 2000;
 const MIN_QUERY_INTERVAL_MS = 2000;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minute cache
 let lastQueryTime = 0;
+
+// Streaming loading phases for progressive UX
+export type LoadingPhase = "searching" | "analyzing" | "generating" | null;
 
 // In-memory query result cache
 const queryCache = new Map<string, { result: RagQueryResult; timestamp: number }>();
@@ -101,8 +105,12 @@ type AppState = {
   currentQuery: RagQueryResult | null;
   queryLoading: boolean;
   queryError: string | null;
+  loadingPhase: LoadingPhase;
   submitQuery: (queryText: string) => Promise<void>;
   submitFeedback: (queryId: string, feedback: "up" | "down") => Promise<void>;
+
+  // Saved queries
+  toggleSaveQuery: (queryId: string) => Promise<void>;
 
   // Query history
   recentQueries: RagQueryResult[];
@@ -125,6 +133,18 @@ type AppState = {
   showAllSources: boolean;
   toggleShowAllSources: () => void;
 
+  // Mobile layout
+  leftNavOpen: boolean;
+  rightSidebarOpen: boolean;
+  toggleLeftNav: () => void;
+  toggleRightSidebar: () => void;
+  closeAllPanels: () => void;
+
+  // Monitoring
+  lastIngestionTime: string | null;
+  totalArticleCount: number;
+  fetchSystemHealth: () => Promise<void>;
+
   // Reset all state (called on sign-out)
   resetStore: () => void;
 };
@@ -138,11 +158,17 @@ export const useAppStore = create<AppState>((set) => ({
     try {
       const { data, error } = await supabase
         .from("sources")
-        .select("*")
+        .select("*, articles(count)")
         .eq("is_active", true)
         .order("name");
       if (error) throw error;
-      set({ sources: (data as Source[]) ?? [], sourcesLoading: false });
+      // Replace static article_count with live count from articles join
+      const sources = (data ?? []).map((row: Record<string, unknown>) => {
+        const articlesArr = row.articles as { count: number }[] | undefined;
+        const liveCount = articlesArr?.[0]?.count ?? 0;
+        return { ...row, article_count: liveCount } as Source;
+      });
+      set({ sources, sourcesLoading: false });
     } catch {
       set({ sources: [], sourcesLoading: false });
     }
@@ -151,18 +177,19 @@ export const useAppStore = create<AppState>((set) => ({
   currentQuery: null,
   queryLoading: false,
   queryError: null,
+  loadingPhase: null,
 
   submitQuery: async (queryText: string) => {
     const trimmed = queryText.trim();
     if (!trimmed) return;
     if (trimmed.length > MAX_QUERY_LENGTH) {
-      set({ queryError: `Query must be under ${MAX_QUERY_LENGTH} characters` });
+      set({ queryError: `Max ${MAX_QUERY_LENGTH} tegn` });
       return;
     }
 
     const now = Date.now();
     if (now - lastQueryTime < MIN_QUERY_INTERVAL_MS) {
-      set({ queryError: "Please wait a moment before submitting another query" });
+      set({ queryError: "Vent venligst et oejeblik" });
       return;
     }
     lastQueryTime = now;
@@ -181,7 +208,7 @@ export const useAppStore = create<AppState>((set) => ({
       return;
     }
 
-    set({ queryLoading: true, queryError: null, selectedSource: null, sourceArticles: [] });
+    set({ queryLoading: true, queryError: null, loadingPhase: "searching", selectedSource: null, sourceArticles: [] });
 
     const queryId = generateId();
 
@@ -195,10 +222,13 @@ export const useAppStore = create<AppState>((set) => ({
 
     // Call n8n RAG pipeline + Web Search in parallel
     try {
+      set({ loadingPhase: "analyzing" });
+      const locale = useLocaleStore.getState().locale;
       const [rag, webSearch] = await Promise.all([
-        queryRagPipeline(trimmed, queryId),
-        queryWebSearch(trimmed, queryId).catch((e) => { console.error("Web search failed:", e); return null; }),
+        queryRagPipeline(trimmed, queryId, locale),
+        queryWebSearch(trimmed, queryId).catch(() => null),
       ]);
+      set({ loadingPhase: "generating" });
       const analysis = mapRagResponseToAnalysis(rag);
 
       const newQuery: RagQueryResult = {
@@ -218,6 +248,7 @@ export const useAppStore = create<AppState>((set) => ({
       set((state) => ({
         currentQuery: newQuery,
         queryLoading: false,
+        loadingPhase: null,
         recentQueries: [newQuery, ...state.recentQueries.slice(0, 19)],
       }));
 
@@ -255,6 +286,7 @@ export const useAppStore = create<AppState>((set) => ({
       set({
         queryError: err instanceof Error ? err.message : "Query failed",
         queryLoading: false,
+        loadingPhase: null,
       });
     }
   },
@@ -263,8 +295,6 @@ export const useAppStore = create<AppState>((set) => ({
     try {
       const user = useAuthStore.getState().user;
       if (!user) return;
-      // Save feedback — update the query's is_saved flag as a proxy
-      // (A dedicated feedback table would be better long-term)
       await supabase
         .from("queries")
         .update({ is_saved: feedback === "up" })
@@ -272,6 +302,37 @@ export const useAppStore = create<AppState>((set) => ({
         .eq("user_id", user.id);
     } catch {
       // Silently fail — feedback is non-critical
+    }
+  },
+
+  toggleSaveQuery: async (queryId: string) => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+    // Optimistic update
+    set((state) => {
+      const updated = state.recentQueries.map((q) =>
+        q.id === queryId ? { ...q, is_saved: !q.is_saved } : q
+      );
+      const currentQuery = state.currentQuery?.id === queryId
+        ? { ...state.currentQuery, is_saved: !state.currentQuery.is_saved }
+        : state.currentQuery;
+      return { recentQueries: updated, currentQuery };
+    });
+    try {
+      const query = useAppStore.getState().recentQueries.find((q) => q.id === queryId);
+      await supabase
+        .from("queries")
+        .update({ is_saved: query?.is_saved ?? false })
+        .eq("id", queryId)
+        .eq("user_id", user.id);
+    } catch {
+      // Revert on error
+      set((state) => {
+        const reverted = state.recentQueries.map((q) =>
+          q.id === queryId ? { ...q, is_saved: !q.is_saved } : q
+        );
+        return { recentQueries: reverted };
+      });
     }
   },
 
@@ -392,6 +453,45 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({ showAllSources: !state.showAllSources }));
   },
 
+  // Mobile layout
+  leftNavOpen: false,
+  rightSidebarOpen: false,
+
+  toggleLeftNav: () => {
+    set((state) => ({ leftNavOpen: !state.leftNavOpen, rightSidebarOpen: false }));
+  },
+
+  toggleRightSidebar: () => {
+    set((state) => ({ rightSidebarOpen: !state.rightSidebarOpen, leftNavOpen: false }));
+  },
+
+  closeAllPanels: () => {
+    set({ leftNavOpen: false, rightSidebarOpen: false });
+  },
+
+  // Monitoring
+  lastIngestionTime: null,
+  totalArticleCount: 0,
+
+  fetchSystemHealth: async () => {
+    try {
+      const { data } = await supabase
+        .from("articles")
+        .select("ingested_at")
+        .order("ingested_at", { ascending: false })
+        .limit(1);
+      const latest = data?.[0]?.ingested_at ?? null;
+
+      const { count } = await supabase
+        .from("articles")
+        .select("*", { count: "exact", head: true });
+
+      set({ lastIngestionTime: latest, totalArticleCount: count ?? 0 });
+    } catch {
+      // Non-critical
+    }
+  },
+
   resetStore: () => {
     set({
       sources: [],
@@ -399,6 +499,7 @@ export const useAppStore = create<AppState>((set) => ({
       currentQuery: null,
       queryLoading: false,
       queryError: null,
+      loadingPhase: null,
       recentQueries: [],
       recentArticles: [],
       queryCountToday: 0,
@@ -406,6 +507,10 @@ export const useAppStore = create<AppState>((set) => ({
       sourceArticles: [],
       sourceArticlesLoading: false,
       showAllSources: false,
+      leftNavOpen: false,
+      rightSidebarOpen: false,
+      lastIngestionTime: null,
+      totalArticleCount: 0,
     });
   },
 

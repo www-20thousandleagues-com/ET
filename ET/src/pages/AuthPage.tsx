@@ -46,12 +46,12 @@ export function AuthPage() {
             "{t.auth.tagline}"
           </blockquote>
           <div className="flex items-center gap-6 text-sm text-stone-500">
-            <span>{t.auth.sources}</span>
+            <span>{t.auth.activeSources.replace("{count}", "17")}</span>
             <span>{t.auth.dailyAnalyses}</span>
             <span>{t.auth.aiPowered}</span>
           </div>
         </div>
-        <p className="text-xs text-stone-600">Et Primaer &copy; 2026</p>
+        <p className="text-xs text-stone-600">{t.common.copyright} &copy; 2026</p>
       </div>
 
       {/* Right panel - auth form */}

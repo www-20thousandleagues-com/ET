@@ -50,7 +50,8 @@ function buildHeaders(): Record<string, string> {
 
 export async function queryRagPipeline(
   queryText: string,
-  queryId: string
+  queryId: string,
+  locale: string = "da"
 ): Promise<RagResponse> {
   if (!N8N_WEBHOOK_URL) {
     throw new Error("VITE_N8N_WEBHOOK_URL not configured");
@@ -62,7 +63,7 @@ export async function queryRagPipeline(
   const res = await fetch(`${N8N_WEBHOOK_URL}/jaegeren-query`, {
     method: "POST",
     headers: buildHeaders(),
-    body: JSON.stringify({ query_text: queryText, query_id: queryId }),
+    body: JSON.stringify({ query_text: queryText, query_id: queryId, locale }),
     signal: controller.signal,
     keepalive: true,
   });

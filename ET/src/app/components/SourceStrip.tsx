@@ -20,9 +20,9 @@ export function SourceStrip() {
   };
 
   return (
-    <div className="bg-stone-50 dark:bg-stone-900/80 border-b border-stone-200 dark:border-stone-800 px-4 py-2.5">
+    <div className="bg-stone-50 dark:bg-stone-900/80 border-b border-stone-200 dark:border-stone-800 px-2 sm:px-4 py-2.5">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400 flex-shrink-0">
+        <div className="hidden sm:flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400 flex-shrink-0">
           <Newspaper className="size-3.5" />
           <span className="font-medium">{t.sourceStrip.activeSources}</span>
         </div>
@@ -30,7 +30,7 @@ export function SourceStrip() {
         <button
           onClick={() => scroll("left")}
           className="p-0.5 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-          aria-label="Scroll sources left"
+          aria-label={t.common.scrollLeft}
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -69,7 +69,7 @@ export function SourceStrip() {
         <button
           onClick={() => scroll("right")}
           className="p-0.5 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-          aria-label="Scroll sources right"
+          aria-label={t.common.scrollRight}
         >
           <ChevronRight className="size-4" />
         </button>
@@ -82,7 +82,8 @@ export function SourceStrip() {
               : "border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-400 hover:border-black dark:hover:border-white hover:text-black dark:hover:text-white"
           }`}
         >
-          {showAllSources ? `${t.common.configure} (${sources.length})` : `${t.common.configure} (${displaySources.length}/${sources.length})`}
+          <span className="hidden sm:inline">{showAllSources ? `${t.common.configure} (${sources.length})` : `${t.common.configure} (${displaySources.length}/${sources.length})`}</span>
+          <span className="sm:hidden">{displaySources.length}/{sources.length}</span>
         </button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { BookmarkCheck, Database, ChevronRight, LogOut, Newspaper } from "lucide-react";
+import { BookmarkCheck, Database, ChevronRight, LogOut, Newspaper, Bookmark } from "lucide-react";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { LanguageSwitcher } from "@/app/components/LanguageSwitcher";
@@ -14,18 +14,30 @@ export function LeftNav() {
   const sources = useAppStore((s) => s.sources);
   const submitQuery = useAppStore((s) => s.submitQuery);
   const browseSource = useAppStore((s) => s.browseSource);
+  const closeAllPanels = useAppStore((s) => s.closeAllPanels);
 
-  const savedQueryItems = recentQueries.slice(0, 5);
+  const savedQueries = recentQueries.filter((q) => q.is_saved).slice(0, 5);
+  const recentQueryItems = recentQueries.slice(0, 5);
   const recentArticleItems = recentArticles.slice(0, 5);
   const activeSources = sources.filter((s) => s.article_count > 0);
 
+  const handleQueryClick = (text: string) => {
+    closeAllPanels();
+    submitQuery(text);
+  };
+
+  const handleSourceClick = (source: typeof sources[0]) => {
+    closeAllPanels();
+    browseSource(source);
+  };
+
   return (
-    <aside className="w-64 border-r border-stone-200 dark:border-stone-800 bg-background flex flex-col h-screen">
+    <aside className="w-full h-screen border-r border-stone-200 dark:border-stone-800 bg-background flex flex-col">
       <div className="p-6 border-b border-stone-200 dark:border-stone-800">
         <div className="mb-4">
           <ImageWithFallback
             src="/logo.png"
-            alt="Et Primaer Logo"
+            alt={t.common.logoAlt}
             className="h-16 w-auto object-contain object-left dark:invert"
           />
         </div>
@@ -45,7 +57,7 @@ export function LeftNav() {
               {recentArticleItems.map((article) => (
                 <li key={article.id}>
                   <button
-                    onClick={() => submitQuery(article.title)}
+                    onClick={() => handleQueryClick(article.title)}
                     className="w-full text-left px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded flex items-center justify-between group transition-colors"
                   >
                     <span className="truncate">
@@ -60,17 +72,42 @@ export function LeftNav() {
         )}
 
         {/* Saved Queries */}
-        {savedQueryItems.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 px-2 mb-2 text-foreground">
+            <Bookmark className="size-4" />
+            <h2 className="text-sm font-medium">{t.nav.savedQueries}</h2>
+          </div>
+          <ul className="space-y-1">
+            {savedQueries.length > 0 ? (
+              savedQueries.map((q) => (
+                <li key={q.id}>
+                  <button
+                    onClick={() => handleQueryClick(q.query_text)}
+                    className="w-full text-left px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded flex items-center justify-between group transition-colors"
+                  >
+                    <span className="truncate">{q.query_text}</span>
+                    <ChevronRight className="size-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="px-2 py-1.5 text-xs text-muted-foreground">{t.nav.noSavedQueries}</li>
+            )}
+          </ul>
+        </div>
+
+        {/* Recent Queries */}
+        {recentQueryItems.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-2 px-2 mb-2 text-foreground">
               <BookmarkCheck className="size-4" />
-              <h2 className="text-sm font-medium">{t.nav.savedQueries}</h2>
+              <h2 className="text-sm font-medium">{t.nav.queryHistory}</h2>
             </div>
             <ul className="space-y-1">
-              {savedQueryItems.map((q) => (
+              {recentQueryItems.map((q) => (
                 <li key={q.id}>
                   <button
-                    onClick={() => submitQuery(q.query_text)}
+                    onClick={() => handleQueryClick(q.query_text)}
                     className="w-full text-left px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded flex items-center justify-between group transition-colors"
                   >
                     <span className="truncate">{q.query_text}</span>
@@ -93,7 +130,7 @@ export function LeftNav() {
               activeSources.map((source) => (
                 <li key={source.id}>
                   <button
-                    onClick={() => browseSource(source)}
+                    onClick={() => handleSourceClick(source)}
                     className="w-full text-left px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded flex items-center justify-between group transition-colors"
                   >
                     <span className="truncate">{source.name}</span>
