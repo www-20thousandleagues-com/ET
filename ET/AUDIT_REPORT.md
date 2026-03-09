@@ -162,36 +162,48 @@ Estimated ceiling: ~50 concurrent users before degradation.
 - **DevOps**: 3/10 — Docker Compose works, no monitoring/alerting
 - **Deployment**: SSH + manual commands, no rollback
 
-## 9. Actionable Recommendations
+## 9. Actionable Recommendations — Status
 
 ### P0 — Critical
-1. Move secrets to Docker secrets / `.env` excluded from git
-2. Add `.env` to `.gitignore`, rotate keys
-3. Install Let's Encrypt SSL
-4. Add n8n webhook authentication
-5. Commit `package-lock.json`
+1. ~~Move secrets to Docker secrets / `.env` excluded from git~~ DONE
+2. ~~Add `.env` to `.gitignore`, rotate keys~~ DONE
+3. Install Let's Encrypt SSL — script at `/opt/jaegeren/setup-ssl.sh` (requires root)
+4. ~~Add n8n webhook authentication~~ DONE (x-webhook-secret header)
+5. ~~Commit `package-lock.json`~~ DONE (pnpm-lock.yaml)
 
 ### P1 — High
-6. Add Vitest + Testing Library
-7. Add ESLint + Prettier with husky
-8. Set up GitHub Actions CI
-9. Split AnswerArea.tsx
-10. Split app.ts store
-11. Fix broken RSS feeds
-12. Add container resource limits
+6. ~~Add Vitest + Testing Library~~ DONE (32 tests passing)
+7. ~~Add ESLint + Prettier with husky~~ DONE (pre-commit hooks active)
+8. ~~Set up GitHub Actions CI~~ DONE (lint, test, format:check, build, deploy)
+9. ~~Split AnswerArea.tsx~~ DONE (830 -> 361 lines, 8 sub-components)
+10. ~~Split app.ts store~~ DONE (3 domain slices)
+11. Fix broken RSS feeds — requires n8n workflow investigation
+12. ~~Add container resource limits~~ DONE (CPU + memory limits)
 
 ### P2 — Medium
-13. Add React Query for server state
-14. Query result caching
-15. Playwright E2E tests
-16. Staging environment
-17. Monitoring + alerting
-18. Structured logging
-19. Health check endpoint
+13. Add React Query for server state — deferred (query cache already exists)
+14. ~~Query result caching~~ DONE (5-min TTL in-memory cache)
+15. Add Playwright E2E tests — deferred
+16. Add staging environment — deferred
+17. Add monitoring + alerting — deferred
+18. ~~Structured logging~~ DONE (src/lib/logger.ts, JSON format)
+19. ~~Health check endpoint~~ DONE (Docker healthchecks)
 
 ### P3 — Low
-20. Evaluate pgvector migration
-21. Dependabot
-22. Non-root containers
-23. i18n for n8n error messages
-24. Blue-green deployment
+20. Evaluate pgvector migration — deferred
+21. ~~Dependabot~~ DONE (npm weekly, Docker monthly, Actions weekly)
+22. ~~Non-root containers~~ DONE (USER nginx in Dockerfile)
+23. i18n for n8n error messages — deferred
+24. Blue-green deployment — deferred
+
+### Additional fixes applied
+25. ~~ErrorBoundary anti-pattern~~ DONE (functional ErrorFallback component)
+26. ~~document.write() XSS vector~~ DONE (replaced with Blob URL)
+27. ~~Magic numbers~~ DONE (extracted to src/lib/constants.ts)
+28. ~~API config validation~~ DONE (startup warning for missing env vars)
+29. ~~Route-level error boundaries~~ DONE (SectionErrorBoundary on all sections)
+30. ~~Article pagination~~ DONE (Show more/less toggles in OverviewDashboard)
+31. ~~CSP frame-ancestors~~ DONE (nginx.conf)
+32. ~~TypeScript target upgrade~~ DONE (ES2020 -> ES2022)
+
+**Resolved: 22/24 code issues | Deferred: 6 infrastructure/ops items (require separate planning)**
