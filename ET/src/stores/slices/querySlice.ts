@@ -5,8 +5,23 @@ import { queryRagPipeline, queryWebSearch, type RagResponse } from "@/lib/api";
 import { logger } from "@/lib/logger";
 import { useAuthStore } from "@/stores/auth";
 import { useLocaleStore } from "@/stores/locale";
+import { en } from "@/lib/i18n/en";
+import { da } from "@/lib/i18n/da";
 import type { AppState } from "@/stores/app";
 import { MAX_CACHE_SIZE, FETCH_RECENT_QUERIES_LIMIT } from "@/lib/constants";
+
+const localeErrors = { en, da } as const;
+
+function getLocalizedError(key: keyof typeof en.errors, locale: string, replacements?: Record<string, string>): string {
+  const lang = locale in localeErrors ? (locale as keyof typeof localeErrors) : "da";
+  let msg = localeErrors[lang].errors[key];
+  if (replacements) {
+    for (const [k, v] of Object.entries(replacements)) {
+      msg = msg.replace(`{${k}}`, v);
+    }
+  }
+  return msg;
+}
 
 const MAX_QUERY_LENGTH = 2000;
 const MIN_QUERY_INTERVAL_MS = 2000;
@@ -111,14 +126,16 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
   submitQuery: async (queryText: string) => {
     const trimmed = queryText.trim();
     if (!trimmed) return;
+    const locale = useLocaleStore.getState().locale;
+
     if (trimmed.length > MAX_QUERY_LENGTH) {
-      set({ queryError: `Max ${MAX_QUERY_LENGTH} tegn` });
+      set({ queryError: getLocalizedError("maxLength", locale, { max: String(MAX_QUERY_LENGTH) }) });
       return;
     }
 
     const now = Date.now();
     if (now - lastQueryTime < MIN_QUERY_INTERVAL_MS) {
-      set({ queryError: "Vent venligst et øjeblik" });
+      set({ queryError: getLocalizedError("rateLimited", locale) });
       return;
     }
     lastQueryTime = now;

@@ -1,7 +1,18 @@
 import { logger } from "@/lib/logger";
+import { en } from "@/lib/i18n/en";
+import { da } from "@/lib/i18n/da";
 
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || "";
 const WEBHOOK_SECRET = import.meta.env.VITE_WEBHOOK_SECRET || "";
+
+const errorTranslations = { en, da } as const;
+
+type ErrorKey = keyof typeof en.errors;
+
+function getErrorMessage(key: ErrorKey, locale: string): string {
+  const lang = locale in errorTranslations ? (locale as keyof typeof errorTranslations) : "da";
+  return errorTranslations[lang].errors[key];
+}
 
 if (!N8N_WEBHOOK_URL && import.meta.env.MODE === "production") {
   logger.warn("VITE_N8N_WEBHOOK_URL is not set — RAG queries will fail");
@@ -60,7 +71,7 @@ export async function queryRagPipeline(
   locale: string = "da",
 ): Promise<RagResponse> {
   if (!N8N_WEBHOOK_URL) {
-    throw new Error("VITE_N8N_WEBHOOK_URL not configured");
+    throw new Error(getErrorMessage("webhookNotConfigured", locale));
   }
 
   const controller = new AbortController();
@@ -78,14 +89,14 @@ export async function queryRagPipeline(
     clearTimeout(timeout);
 
     if (!res.ok) {
-      throw new Error(`RAG pipeline error: ${res.status}`);
+      throw new Error(getErrorMessage("ragPipelineError", locale));
     }
 
     let data: unknown;
     try {
       data = await res.json();
     } catch {
-      throw new Error("Serveren returnerede et ugyldigt svar. Prøv venligst igen om et øjeblik.");
+      throw new Error(getErrorMessage("invalidResponse", locale));
     }
 
     if (!data || typeof (data as RagResponse).analysis?.content !== "string") {
@@ -95,7 +106,7 @@ export async function queryRagPipeline(
   } catch (e) {
     clearTimeout(timeout);
     if (e instanceof DOMException && e.name === "AbortError") {
-      throw new Error("Forespørgslen tog for lang tid. Prøv venligst igen om et øjeblik.", { cause: e });
+      throw new Error(getErrorMessage("timeout", locale), { cause: e });
     }
     throw e;
   }

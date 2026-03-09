@@ -200,6 +200,15 @@ export const en = {
     close: "Close",
     impactedBy: "Impacted by",
   },
+  errors: {
+    timeout: "The query took too long. Please try again in a moment.",
+    invalidResponse: "The server returned an invalid response. Please try again.",
+    networkError: "Could not connect to the server. Check your internet connection.",
+    ragPipelineError: "Analysis pipeline error. Please try again.",
+    webhookNotConfigured: "Query service is not configured.",
+    maxLength: "Max {max} characters",
+    rateLimited: "Please wait a moment",
+  },
   export: {
     title: "Jaegeren Analysis",
     queryLabel: "Query",

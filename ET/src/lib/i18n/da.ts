@@ -202,6 +202,15 @@ export const da: Translations = {
     close: "Luk",
     impactedBy: "Paavirket af",
   },
+  errors: {
+    timeout: "Forespørgslen tog for lang tid. Prøv venligst igen om et øjeblik.",
+    invalidResponse: "Serveren returnerede et ugyldigt svar. Prøv venligst igen.",
+    networkError: "Kunne ikke forbinde til serveren. Tjek din internetforbindelse.",
+    ragPipelineError: "Fejl i analysepipeline. Prøv venligst igen.",
+    webhookNotConfigured: "Forespørgselstjenesten er ikke konfigureret.",
+    maxLength: "Maks {max} tegn",
+    rateLimited: "Vent venligst et øjeblik",
+  },
   export: {
     title: "Jaegeren Analyse",
     queryLabel: "Forespoergsel",
