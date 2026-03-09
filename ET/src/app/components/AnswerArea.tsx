@@ -19,13 +19,17 @@ import { CitationListSection } from "@/app/components/answer/CitationList";
 
 type SortOption = "date" | "relevance" | "source";
 
+/** Maps a confidence score to a localized label: high (>=70), medium (>=40), low (<40). */
 function getConfidenceLabel(confidence: number, t: ReturnType<typeof useLocaleStore.getState>["t"]) {
   if (confidence >= 70) return t.answer.high;
   if (confidence >= 40) return t.answer.medium;
   return t.answer.low;
 }
 
-// --- Streaming text reveal hook ---
+/**
+ * Progressively reveals text in chunks (STREAMING_CHUNK_SIZE chars every STREAMING_INTERVAL_MS)
+ * to simulate a streaming/typing animation. Resets when the source text changes.
+ */
 function useStreamingText(text: string, enabled: boolean): { displayed: string; done: boolean } {
   const [displayed, setDisplayed] = useState("");
   const [done, setDone] = useState(false);
@@ -141,6 +145,7 @@ export function AnswerArea() {
     [allCitations],
   );
 
+  /** Copies analysis + citations to clipboard via navigator.clipboard API, falling back to a hidden textarea, then a Blob URL window. */
   const handleCopy = useCallback(async () => {
     if (!analysis) return;
     const text =
@@ -174,6 +179,7 @@ export function AnswerArea() {
     }
   }, [analysis, citationData, t]);
 
+  /** Exports the analysis as markdown (.md), plain text (.txt), or opens a mailto: link for email sharing. */
   const handleExport = useCallback(
     (format: string) => {
       if (!analysis || !currentQuery) return;

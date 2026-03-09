@@ -9,6 +9,7 @@ const errorTranslations = { en, da } as const;
 
 type ErrorKey = keyof typeof en.errors;
 
+/** Looks up a locale-aware error message (da/en) by key, defaulting to Danish. */
 function getErrorMessage(key: ErrorKey, locale: string): string {
   const lang = locale in errorTranslations ? (locale as keyof typeof errorTranslations) : "da";
   return errorTranslations[lang].errors[key];
@@ -55,6 +56,7 @@ export type WebSearchResponse = {
   result_count: number;
 };
 
+/** Builds request headers, including the optional x-webhook-secret if VITE_WEBHOOK_SECRET is set. */
 function buildHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -65,6 +67,10 @@ function buildHeaders(): Record<string, string> {
   return headers;
 }
 
+/**
+ * Calls the n8n RAG webhook with a 30s abort timeout. Returns the structured analysis and citations.
+ * Throws locale-aware errors on timeout, bad response, or missing webhook config.
+ */
 export async function queryRagPipeline(
   queryText: string,
   queryId: string,
@@ -112,6 +118,7 @@ export async function queryRagPipeline(
   }
 }
 
+/** Calls the n8n web search webhook (15s timeout). Degrades gracefully — returns empty results on any failure. */
 export async function queryWebSearch(queryText: string, queryId: string): Promise<WebSearchResponse> {
   if (!N8N_WEBHOOK_URL) {
     return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };

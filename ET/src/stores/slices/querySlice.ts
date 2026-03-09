@@ -34,10 +34,12 @@ export type LoadingPhase = "searching" | "analyzing" | "generating" | null;
 // In-memory query result cache
 const queryCache = new Map<string, { result: RagQueryResult; timestamp: number }>();
 
+/** Normalizes a query string (lowercase, trimmed, collapsed whitespace) for use as a cache key. */
 function getCacheKey(query: string): string {
   return query.toLowerCase().trim().replace(/\s+/g, " ");
 }
 
+/** Returns a cached query result if it exists and hasn't expired (5-minute TTL), otherwise null. */
 function getCachedResult(query: string): RagQueryResult | null {
   const key = getCacheKey(query);
   const entry = queryCache.get(key);
@@ -49,6 +51,7 @@ function getCachedResult(query: string): RagQueryResult | null {
   return entry.result;
 }
 
+/** Stores a query result in the in-memory cache, evicting the oldest entry if cache exceeds MAX_CACHE_SIZE. */
 function setCachedResult(query: string, result: RagQueryResult): void {
   const key = getCacheKey(query);
   queryCache.set(key, { result, timestamp: Date.now() });
@@ -123,6 +126,11 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
   queryError: null,
   loadingPhase: null,
 
+  /**
+   * Validates input (length + rate limit), checks the in-memory cache, then runs
+   * RAG pipeline and web search in parallel. Persists the query and analysis to
+   * Supabase, caches the result, and updates the store with progressive loading phases.
+   */
   submitQuery: async (queryText: string) => {
     const trimmed = queryText.trim();
     if (!trimmed) return;
@@ -243,6 +251,7 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
     }
   },
 
+  /** Persists thumbs-up/down feedback to Supabase by toggling is_saved. Fails silently since feedback is non-critical. */
   submitFeedback: async (queryId: string, feedback: "up" | "down") => {
     try {
       const user = useAuthStore.getState().user;
@@ -257,6 +266,7 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
     }
   },
 
+  /** Optimistically toggles is_saved in local state, then persists to Supabase. Reverts on failure. */
   toggleSaveQuery: async (queryId: string) => {
     const user = useAuthStore.getState().user;
     if (!user) return;

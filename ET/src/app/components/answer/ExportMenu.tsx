@@ -10,6 +10,7 @@ export interface ExportMenuProps {
   t: Translations;
 }
 
+/** Builds a markdown string with query, date, analysis content, and numbered citation list with excerpts. */
 export function buildMarkdownExport(
   query: string,
   content: string,
@@ -27,6 +28,7 @@ export function buildMarkdownExport(
   return md;
 }
 
+/** Triggers a browser download by creating a temporary Blob URL and clicking a hidden anchor element. */
 export function downloadFile(content: string, filename: string, type: string) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);

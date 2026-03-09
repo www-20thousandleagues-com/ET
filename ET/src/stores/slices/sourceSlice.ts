@@ -51,6 +51,7 @@ export const createSourceSlice: StateCreator<AppState, [], [], SourceSlice> = (s
   sources: [],
   sourcesLoading: false,
 
+  /** Fetches all active sources from Supabase with live article counts from the articles join. */
   fetchSources: async () => {
     set({ sourcesLoading: true });
     try {
@@ -91,6 +92,7 @@ export const createSourceSlice: StateCreator<AppState, [], [], SourceSlice> = (s
   sourceArticles: [],
   sourceArticlesLoading: false,
 
+  /** Selects a source for browsing and loads its most recent articles, clearing any active query. */
   browseSource: async (source: Source) => {
     set({ selectedSource: source, sourceArticlesLoading: true, currentQuery: null, queryError: null });
     try {
@@ -123,6 +125,7 @@ export const createSourceSlice: StateCreator<AppState, [], [], SourceSlice> = (s
   lastIngestionTime: null,
   totalArticleCount: 0,
 
+  /** Fetches the latest ingestion timestamp and total article count for the system health dashboard. */
   fetchSystemHealth: async () => {
     try {
       const { data } = await supabase

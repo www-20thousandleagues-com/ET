@@ -36,6 +36,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set) => (
     set((state) => ({ rightSidebarOpen: !state.rightSidebarOpen, leftNavOpen: false }));
   },
 
+  /** Closes both the left nav and right sidebar panels (used on mobile overlay dismiss). */
   closeAllPanels: () => {
     set({ leftNavOpen: false, rightSidebarOpen: false });
   },
@@ -49,6 +50,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set) => (
     set({ queryError: null });
   },
 
+  /** Resets query, loading, error, source browsing, and saved-queries view to return to the home/overview state. */
   goHome: () => {
     set({
       currentQuery: null,
@@ -61,6 +63,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set) => (
     });
   },
 
+  /** Resets all app state to initial values — called on sign-out to clear user-scoped data. */
   resetStore: () => {
     set({
       sources: [],

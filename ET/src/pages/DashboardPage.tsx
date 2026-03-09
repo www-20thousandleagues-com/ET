@@ -10,13 +10,15 @@ import { SettingsModal } from "@/app/components/SettingsModal";
 import { useAppStore } from "@/stores/app";
 import { useSettingsStore } from "@/stores/settings";
 import { useLocaleStore } from "@/stores/locale";
+import {
+  useSources,
+  useRecentArticles,
+  useRecentQueries,
+  useQueryCountToday,
+  useSystemHealth,
+} from "@/hooks/useQueries";
 
 export function DashboardPage() {
-  const fetchSources = useAppStore((s) => s.fetchSources);
-  const fetchRecentArticles = useAppStore((s) => s.fetchRecentArticles);
-  const fetchQueryCountToday = useAppStore((s) => s.fetchQueryCountToday);
-  const fetchRecentQueries = useAppStore((s) => s.fetchRecentQueries);
-  const fetchSystemHealth = useAppStore((s) => s.fetchSystemHealth);
   const leftNavOpen = useAppStore((s) => s.leftNavOpen);
   const rightSidebarOpen = useAppStore((s) => s.rightSidebarOpen);
   const toggleLeftNav = useAppStore((s) => s.toggleLeftNav);
@@ -27,13 +29,39 @@ export function DashboardPage() {
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
   const t = useLocaleStore((s) => s.t);
 
+  // React Query hooks — replace manual fetchX() calls
+  const { data: sources } = useSources();
+  const { data: recentArticles } = useRecentArticles();
+  const { data: recentQueries } = useRecentQueries();
+  const { data: queryCountToday } = useQueryCountToday();
+  const { data: systemHealth } = useSystemHealth();
+
+  // Sync React Query data back to Zustand store so existing child components
+  // that read from useAppStore continue to work without changes.
   useEffect(() => {
-    fetchSources();
-    fetchRecentArticles();
-    fetchQueryCountToday();
-    fetchRecentQueries();
-    fetchSystemHealth();
-  }, [fetchSources, fetchRecentArticles, fetchQueryCountToday, fetchRecentQueries, fetchSystemHealth]);
+    if (sources) useAppStore.setState({ sources, sourcesLoading: false });
+  }, [sources]);
+
+  useEffect(() => {
+    if (recentArticles) useAppStore.setState({ recentArticles });
+  }, [recentArticles]);
+
+  useEffect(() => {
+    if (recentQueries) useAppStore.setState({ recentQueries });
+  }, [recentQueries]);
+
+  useEffect(() => {
+    if (queryCountToday !== undefined) useAppStore.setState({ queryCountToday });
+  }, [queryCountToday]);
+
+  useEffect(() => {
+    if (systemHealth) {
+      useAppStore.setState({
+        lastIngestionTime: systemHealth.lastIngestionTime,
+        totalArticleCount: systemHealth.totalArticleCount,
+      });
+    }
+  }, [systemHealth]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

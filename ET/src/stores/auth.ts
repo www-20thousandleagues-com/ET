@@ -61,6 +61,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   initialized: false,
 
+  /**
+   * Initializes auth state: restores session from Supabase, fetches profile, and registers
+   * an onAuthStateChange listener. Protected by a 3s hard timeout to prevent hanging.
+   */
   initialize: async () => {
     if (get().initialized) return;
 
@@ -138,6 +142,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     clearTimeout(timeout);
   },
 
+  /** Signs in with email/password. Returns a sanitized error message on failure to avoid leaking internals. */
   signIn: async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: sanitizeAuthError(error.message) };
@@ -149,6 +154,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return { error: null };
   },
 
+  /** Creates a new account and auto-signs in if email verification is disabled. Returns sanitized errors. */
   signUp: async (email, password, fullName) => {
     const { data, error } = await supabase.auth.signUp({
       email,

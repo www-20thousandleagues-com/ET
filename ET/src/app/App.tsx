@@ -1,10 +1,21 @@
 import { useEffect, Suspense, lazy, Component, type ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { useAuthStore } from "@/stores/auth";
 import { useLocaleStore } from "@/stores/locale";
 import { ProtectedRoute } from "@/app/components/ProtectedRoute";
 import { Toaster } from "@/app/components/ui/sonner";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const AuthPage = lazy(() => import("@/pages/AuthPage").then((m) => ({ default: m.AuthPage })));
 const DashboardPage = lazy(() => import("@/pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
@@ -68,25 +79,27 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <BrowserRouter>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              <Route path="/auth" element={<AuthPage />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-        <Toaster />
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <BrowserRouter>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route path="/auth" element={<AuthPage />} />
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+          <Toaster />
+        </ThemeProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }
