@@ -45,6 +45,8 @@ export const da: Translations = {
     feedbackThanks: "Tak for din feedback",
     showActiveSources: "Vis aktive kilder",
     showAllSources: "Vis alle kilder",
+    showMore: "Vis flere",
+    showLess: "Vis faerre",
   },
   auth: {
     logIn: "Log ind",
@@ -59,7 +61,8 @@ export const da: Translations = {
     signupSubtitle: "Kom i gang med Jaegeren",
     noAccount: "Har du ikke en konto?",
     hasAccount: "Har du allerede en konto?",
-    tagline: "Overblik over geopolitiske skift, handelsmonstre og okonomiske politikker - syntetiseret fra flere kilder i realtid.",
+    tagline:
+      "Overblik over geopolitiske skift, handelsmonstre og okonomiske politikker - syntetiseret fra flere kilder i realtid.",
     activeSources: "{count} aktive kilder",
     dailyAnalyses: "Realtidsanalyse",
     aiPowered: "AI-drevet",
@@ -123,7 +126,8 @@ export const da: Translations = {
     methodologyStep4: "Tillidsscore",
     methodologyVectorSearch: "Din forespørgsel indlejres og matches mod indekserede artikler i Pinecone.",
     methodologyReranking: "Topresultater genrangeres for at udvælge de mest relevante passager.",
-    methodologySynthesis: "Claude syntetiserer en analyse fra den hentede kontekst med indbyggede citatmarkører [1], [2], [3].",
+    methodologySynthesis:
+      "Claude syntetiserer en analyse fra den hentede kontekst med indbyggede citatmarkører [1], [2], [3].",
     methodologyConfidence: "Baseret på kildeoverensstemmelse, aktualitet og dækningsbredde. Over 70% = Høj tillid.",
     methodologyFooter: "Kilder indsamles hvert 5. minut fra {count} aktive feeds via automatiseret RSS-pipeline.",
     hideCitations: "Skjul citater",
@@ -148,8 +152,10 @@ export const da: Translations = {
     neverRun: "Aldrig",
     latestNewsFrom: "Seneste nyheder fra {name}",
     emailSubject: "Jaegeren: {query}",
-    emailBodyQuery: "Forespoergsel: {query}\n\n{content}\n\nKilder: {primary} primaere, {supporting} stottende\nTillid: {confidence}%",
-    emailBodyDefault: "Gennemgaa den seneste efterretningsbriefing.\n\nOvervaagede kilder: {sourceCount}\nSamlede artikler: {articleCount}",
+    emailBodyQuery:
+      "Forespoergsel: {query}\n\n{content}\n\nKilder: {primary} primaere, {supporting} stottende\nTillid: {confidence}%",
+    emailBodyDefault:
+      "Gennemgaa den seneste efterretningsbriefing.\n\nOvervaagede kilder: {sourceCount}\nSamlede artikler: {articleCount}",
   },
   time: {
     justNow: "<1 min siden",
@@ -180,7 +186,8 @@ export const da: Translations = {
     addGeography: "Tilfoej geografi",
     geographyPlaceholder: "f.eks., Europa, Oestasien, Mellemøsten...",
     lenses: "Analytiske linser",
-    lensesDescription: "Forudkonfigurer prompts der giver nyheder et bestemt perspektiv. Historier paavirket af dine linser vil blive markeret.",
+    lensesDescription:
+      "Forudkonfigurer prompts der giver nyheder et bestemt perspektiv. Historier paavirket af dine linser vil blive markeret.",
     addLens: "Tilfoej linse",
     lensName: "Linsenavn",
     lensNamePlaceholder: "f.eks., Forsyningskaederisiko",

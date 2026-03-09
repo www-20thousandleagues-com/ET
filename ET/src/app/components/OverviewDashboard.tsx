@@ -1,9 +1,10 @@
 import { Newspaper, ExternalLink, Eye, Clock, TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAppStore } from "@/stores/app";
 import { useSettingsStore } from "@/stores/settings";
 import { useLocaleStore } from "@/stores/locale";
 import { safeFormatDate } from "@/lib/utils";
+import { MAX_TOPIC_ARTICLES, MAX_RECENT_STORIES, MAX_SOURCE_STORIES } from "@/lib/constants";
 
 function isSafeUrl(url: string): boolean {
   try {
@@ -47,6 +48,12 @@ export function OverviewDashboard() {
   const topics = useSettingsStore((s) => s.topics);
   const t = useLocaleStore((s) => s.t);
 
+  const [showAllTopics, setShowAllTopics] = useState(false);
+  const [showAllRecent, setShowAllRecent] = useState(false);
+
+  const MAX_TOPICS = MAX_TOPIC_ARTICLES;
+  const MAX_RECENT = MAX_RECENT_STORIES;
+
   // Group articles by source
   const groupedBySource = useMemo(() => {
     const groups = new Map<string, ArticleItem[]>();
@@ -59,10 +66,7 @@ export function OverviewDashboard() {
   }, [recentArticles]);
 
   // Articles from last 24h
-  const last24h = useMemo(
-    () => recentArticles.filter((a) => hoursAgo(a.published_at) <= 24),
-    [recentArticles]
-  );
+  const last24h = useMemo(() => recentArticles.filter((a) => hoursAgo(a.published_at) <= 24), [recentArticles]);
 
   // Articles matching user topics
   const topicArticles = useMemo(() => {
@@ -114,7 +118,7 @@ export function OverviewDashboard() {
               <span className="text-xs text-muted-foreground">({topicArticles.length})</span>
             </div>
             <div className="space-y-2">
-              {topicArticles.slice(0, 5).map((article) => {
+              {topicArticles.slice(0, showAllTopics ? undefined : MAX_TOPICS).map((article) => {
                 const articleLenses = lensMatches.get(article.id) ?? [];
                 return (
                   <button
@@ -132,7 +136,10 @@ export function OverviewDashboard() {
                           <span>&bull;</span>
                           <span>{safeFormatDate(article.published_at)}</span>
                           {articleLenses.map((lens) => (
-                            <span key={lens} className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-[10px] font-bold">
+                            <span
+                              key={lens}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-[10px] font-bold"
+                            >
                               <Eye className="size-2.5" />
                               {lens}
                             </span>
@@ -144,6 +151,14 @@ export function OverviewDashboard() {
                 );
               })}
             </div>
+            {topicArticles.length > MAX_TOPICS && (
+              <button
+                onClick={() => setShowAllTopics(!showAllTopics)}
+                className="text-xs text-[var(--brand)] hover:underline mt-2"
+              >
+                {showAllTopics ? t.common.showLess : `${t.common.showMore} (${topicArticles.length - MAX_TOPICS} more)`}
+              </button>
+            )}
           </div>
         )}
 
@@ -152,10 +167,12 @@ export function OverviewDashboard() {
           <div className="flex items-center gap-2 mb-4">
             <Clock className="size-4 text-[var(--brand)]" />
             <h3 className="text-sm font-bold text-foreground">{t.overview.last24h}</h3>
-            <span className="text-xs text-muted-foreground">({last24h.length} {t.answer.articles})</span>
+            <span className="text-xs text-muted-foreground">
+              ({last24h.length} {t.answer.articles})
+            </span>
           </div>
           <div className="space-y-2">
-            {last24h.slice(0, 10).map((article) => {
+            {last24h.slice(0, showAllRecent ? undefined : MAX_RECENT).map((article) => {
               const articleLenses = lensMatches.get(article.id) ?? [];
               return (
                 <button
@@ -173,7 +190,10 @@ export function OverviewDashboard() {
                         <span>&bull;</span>
                         <span>{safeFormatDate(article.published_at)}</span>
                         {articleLenses.map((lens) => (
-                          <span key={lens} className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-[10px] font-bold">
+                          <span
+                            key={lens}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-[10px] font-bold"
+                          >
                             <Eye className="size-2.5" />
                             {lens}
                           </span>
@@ -196,6 +216,14 @@ export function OverviewDashboard() {
               );
             })}
           </div>
+          {last24h.length > MAX_RECENT && (
+            <button
+              onClick={() => setShowAllRecent(!showAllRecent)}
+              className="text-xs text-[var(--brand)] hover:underline mt-2"
+            >
+              {showAllRecent ? t.common.showLess : `${t.common.showMore} (${last24h.length - MAX_RECENT} more)`}
+            </button>
+          )}
         </div>
 
         {/* Stories grouped by source */}
@@ -211,10 +239,12 @@ export function OverviewDashboard() {
                 <div key={sourceName} className="border-2 border-border rounded bg-card p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-bold text-foreground">{sourceName}</h4>
-                    <span className="text-xs text-muted-foreground">{articles.length} {t.answer.articles}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {articles.length} {t.answer.articles}
+                    </span>
                   </div>
                   <ul className="space-y-1.5 mb-3">
-                    {articles.slice(0, 3).map((article) => {
+                    {articles.slice(0, MAX_SOURCE_STORIES).map((article) => {
                       const articleLenses = lensMatches.get(article.id) ?? [];
                       return (
                         <li key={article.id}>

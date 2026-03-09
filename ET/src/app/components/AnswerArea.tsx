@@ -5,6 +5,7 @@ import { useLocaleStore } from "@/stores/locale";
 import { safeFormatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSettingsStore } from "@/stores/settings";
+import { STREAMING_CHUNK_SIZE, STREAMING_INTERVAL_MS } from "@/lib/constants";
 import { OverviewDashboard } from "@/app/components/OverviewDashboard";
 import { SavedQueriesView } from "@/app/components/SavedQueriesView";
 import { CitationContent } from "@/app/components/answer/CitationContent";
@@ -22,10 +23,6 @@ function getConfidenceLabel(confidence: number, t: ReturnType<typeof useLocaleSt
   if (confidence >= 70) return t.answer.high;
   if (confidence >= 40) return t.answer.medium;
   return t.answer.low;
-}
-
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 // --- Streaming text reveal hook ---
@@ -51,9 +48,8 @@ function useStreamingText(text: string, enabled: boolean): { displayed: string; 
     setDone(false);
     setDisplayed("");
     let i = 0;
-    const chunkSize = 3;
     const interval = setInterval(() => {
-      i += chunkSize;
+      i += STREAMING_CHUNK_SIZE;
       if (i >= text.length) {
         setDisplayed(text);
         setDone(true);
@@ -61,7 +57,7 @@ function useStreamingText(text: string, enabled: boolean): { displayed: string; 
       } else {
         setDisplayed(text.slice(0, i));
       }
-    }, 12);
+    }, STREAMING_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [text, enabled]);
 
@@ -109,22 +105,17 @@ export function AnswerArea() {
   }, [currentQuery?.id]);
 
   const analysis = currentQuery?.analysis;
-  const allCitations = analysis?.citations ?? [];
+  const allCitations = useMemo(() => analysis?.citations ?? [], [analysis?.citations]);
 
-  const { displayed: streamedContent, done: streamDone } = useStreamingText(
-    analysis?.content ?? "",
-    streamingEnabled
-  );
+  const { displayed: streamedContent, done: streamDone } = useStreamingText(analysis?.content ?? "", streamingEnabled);
 
   const sourceNames = useMemo(
     () => ["all", ...Array.from(new Set(allCitations.map((c) => c.source_name)))],
-    [allCitations]
+    [allCitations],
   );
 
   const citations = useMemo(() => {
-    const filtered = filterSource === "all"
-      ? allCitations
-      : allCitations.filter((c) => c.source_name === filterSource);
+    const filtered = filterSource === "all" ? allCitations : allCitations.filter((c) => c.source_name === filterSource);
 
     return [...filtered].sort((a, b) => {
       if (sortBy === "date") {
@@ -138,17 +129,24 @@ export function AnswerArea() {
     });
   }, [allCitations, filterSource, sortBy]);
 
-  const citationData = useMemo(() => allCitations.map((c) => ({
-    position: c.position,
-    title: c.title,
-    source: c.source_name,
-    url: c.url,
-    excerpt: c.excerpt,
-  })), [allCitations]);
+  const citationData = useMemo(
+    () =>
+      allCitations.map((c) => ({
+        position: c.position,
+        title: c.title,
+        source: c.source_name,
+        url: c.url,
+        excerpt: c.excerpt,
+      })),
+    [allCitations],
+  );
 
   const handleCopy = useCallback(async () => {
     if (!analysis) return;
-    const text = analysis.content + `\n\n${t.export.sourcesSuffix}:\n` + citationData.map((c) => `[${c.position}] ${c.title} (${c.source}) — ${c.url}`).join("\n");
+    const text =
+      analysis.content +
+      `\n\n${t.export.sourcesSuffix}:\n` +
+      citationData.map((c) => `[${c.position}] ${c.title} (${c.source}) — ${c.url}`).join("\n");
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
@@ -167,30 +165,34 @@ export function AnswerArea() {
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
-      const w = window.open("", "_blank");
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, "_blank");
       if (w) {
-        w.document.write(`<pre>${escapeHtml(text)}</pre>`);
-        w.document.close();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       }
     }
   }, [analysis, citationData, t]);
 
-  const handleExport = useCallback((format: string) => {
-    if (!analysis || !currentQuery) return;
-    const md = buildMarkdownExport(currentQuery.query_text, analysis.content, citationData, t);
-    if (format === "md") {
-      downloadFile(md, `jaegeren-analysis-${Date.now()}.md`, "text/markdown");
-      toast.success(t.common.exportedMd);
-    } else if (format === "txt") {
-      downloadFile(md, `jaegeren-analysis-${Date.now()}.txt`, "text/plain");
-      toast.success(t.common.exportedTxt);
-    } else if (format === "email") {
-      const subject = encodeURIComponent(`${t.export.title}: ${currentQuery.query_text}`);
-      const body = encodeURIComponent(md);
-      window.open(`mailto:?subject=${subject}&body=${body}`);
-    }
-    setActiveMenu(null);
-  }, [analysis, currentQuery, citationData, t]);
+  const handleExport = useCallback(
+    (format: string) => {
+      if (!analysis || !currentQuery) return;
+      const md = buildMarkdownExport(currentQuery.query_text, analysis.content, citationData, t);
+      if (format === "md") {
+        downloadFile(md, `jaegeren-analysis-${Date.now()}.md`, "text/markdown");
+        toast.success(t.common.exportedMd);
+      } else if (format === "txt") {
+        downloadFile(md, `jaegeren-analysis-${Date.now()}.txt`, "text/plain");
+        toast.success(t.common.exportedTxt);
+      } else if (format === "email") {
+        const subject = encodeURIComponent(`${t.export.title}: ${currentQuery.query_text}`);
+        const body = encodeURIComponent(md);
+        window.open(`mailto:?subject=${subject}&body=${body}`);
+      }
+      setActiveMenu(null);
+    },
+    [analysis, currentQuery, citationData, t],
+  );
 
   const handleSave = useCallback(() => {
     if (!currentQuery) return;
@@ -199,14 +201,17 @@ export function AnswerArea() {
     toast.success(willSave ? t.common.savedQuery : t.common.unsavedQuery);
   }, [currentQuery, toggleSaveQuery, t]);
 
-  const handleFeedback = useCallback((type: "up" | "down") => {
-    const val = feedback === type ? null : type;
-    setFeedback(val);
-    if (val && currentQuery) {
-      submitFeedback(currentQuery.id, val);
-      toast.success(t.common.feedbackThanks);
-    }
-  }, [feedback, currentQuery, submitFeedback, t]);
+  const handleFeedback = useCallback(
+    (type: "up" | "down") => {
+      const val = feedback === type ? null : type;
+      setFeedback(val);
+      if (val && currentQuery) {
+        submitFeedback(currentQuery.id, val);
+        toast.success(t.common.feedbackThanks);
+      }
+    },
+    [feedback, currentQuery, submitFeedback, t],
+  );
 
   // Saved queries full view
   if (showSavedQueriesView) {
@@ -234,7 +239,10 @@ export function AnswerArea() {
           <div className="flex items-center justify-center gap-3">
             {currentQuery?.query_text && (
               <button
-                onClick={() => { clearError(); submitQuery(currentQuery.query_text); }}
+                onClick={() => {
+                  clearError();
+                  submitQuery(currentQuery.query_text);
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-[var(--brand)] text-white rounded hover:bg-[var(--brand-hover)] transition-colors"
               >
                 <RefreshCw className="size-4" />
@@ -333,12 +341,15 @@ export function AnswerArea() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 <div>
                   <span className="text-muted-foreground">{t.answer.confidence}: </span>
-                  <span className="font-bold text-foreground">{getConfidenceLabel(analysis.confidence, t)} ({analysis.confidence}%)</span>
+                  <span className="font-bold text-foreground">
+                    {getConfidenceLabel(analysis.confidence, t)} ({analysis.confidence}%)
+                  </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">{t.answer.sourcesLabel}: </span>
                   <span className="font-bold text-foreground">
-                    {analysis.primary_source_count} {t.answer.primary}, {analysis.supporting_source_count} {t.answer.supporting}
+                    {analysis.primary_source_count} {t.answer.primary}, {analysis.supporting_source_count}{" "}
+                    {t.answer.supporting}
                   </span>
                 </div>
                 <div>

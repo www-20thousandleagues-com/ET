@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useLocaleStore } from "@/stores/locale";
 import { useAppStore } from "@/stores/app";
 import { useSettingsStore } from "@/stores/settings";
+import { MAX_TITLE_LENGTH, MAX_RECENT_ITEMS, MAX_RECENT_QUERIES_DISPLAY } from "@/lib/constants";
 
 export function LeftNav() {
   const { profile, signOut } = useAuthStore();
@@ -20,9 +21,9 @@ export function LeftNav() {
   const setShowSavedQueries = useAppStore((s) => s.setShowSavedQueries);
   const openSettings = useSettingsStore((s) => s.openSettings);
 
-  const savedQueries = recentQueries.filter((q) => q.is_saved).slice(0, 5);
-  const recentQueryItems = recentQueries.slice(0, 5);
-  const recentArticleItems = recentArticles.slice(0, 5);
+  const savedQueries = recentQueries.filter((q) => q.is_saved).slice(0, MAX_RECENT_QUERIES_DISPLAY);
+  const recentQueryItems = recentQueries.slice(0, MAX_RECENT_QUERIES_DISPLAY);
+  const recentArticleItems = recentArticles.slice(0, MAX_RECENT_ITEMS);
   const activeSources = sources.filter((s) => s.article_count > 0);
 
   const handleQueryClick = (text: string) => {
@@ -30,7 +31,7 @@ export function LeftNav() {
     submitQuery(text);
   };
 
-  const handleSourceClick = (source: typeof sources[0]) => {
+  const handleSourceClick = (source: (typeof sources)[0]) => {
     closeAllPanels();
     browseSource(source);
   };
@@ -39,7 +40,10 @@ export function LeftNav() {
     <aside className="w-full h-screen border-r border-stone-200 dark:border-stone-800 bg-background flex flex-col">
       <div className="p-6 border-b border-stone-200 dark:border-stone-800">
         <button
-          onClick={() => { closeAllPanels(); goHome(); }}
+          onClick={() => {
+            closeAllPanels();
+            goHome();
+          }}
           className="w-full text-left group"
           title={t.common.home}
         >
@@ -50,7 +54,9 @@ export function LeftNav() {
               className="h-16 w-auto object-contain object-left dark:invert group-hover:opacity-80 transition-opacity"
             />
           </div>
-          <h1 className="font-bold text-foreground tracking-tight group-hover:text-[var(--brand)] transition-colors">Jaegeren</h1>
+          <h1 className="font-bold text-foreground tracking-tight group-hover:text-[var(--brand)] transition-colors">
+            Jaegeren
+          </h1>
           <p className="text-xs text-muted-foreground mt-1">{t.nav.subtitle}</p>
         </button>
       </div>
@@ -71,7 +77,9 @@ export function LeftNav() {
                     className="w-full text-left px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded flex items-center justify-between group transition-colors"
                   >
                     <span className="truncate">
-                      {article.title.length > 40 ? article.title.substring(0, 40) + "..." : article.title}
+                      {article.title.length > MAX_TITLE_LENGTH
+                        ? article.title.substring(0, MAX_TITLE_LENGTH) + "..."
+                        : article.title}
                     </span>
                     <ChevronRight className="size-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </button>
@@ -89,7 +97,10 @@ export function LeftNav() {
               <h2 className="text-sm font-medium">{t.nav.savedQueries}</h2>
             </div>
             <button
-              onClick={() => { closeAllPanels(); setShowSavedQueries(true); }}
+              onClick={() => {
+                closeAllPanels();
+                setShowSavedQueries(true);
+              }}
               className="text-xs text-[var(--brand)] hover:underline"
             >
               {t.nav.viewAllSaved}
@@ -165,7 +176,10 @@ export function LeftNav() {
 
       <div className="p-4 border-t border-stone-200 dark:border-stone-800">
         <button
-          onClick={() => { closeAllPanels(); openSettings(); }}
+          onClick={() => {
+            closeAllPanels();
+            openSettings();
+          }}
           className="w-full flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors mb-3"
         >
           <Settings className="size-4" />
@@ -173,9 +187,7 @@ export function LeftNav() {
         </button>
         {profile && (
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs text-muted-foreground truncate">
-              {profile.full_name || profile.email}
-            </span>
+            <span className="text-xs text-muted-foreground truncate">{profile.full_name || profile.email}</span>
             <button
               onClick={signOut}
               className="p-1 text-muted-foreground hover:text-foreground transition-colors"

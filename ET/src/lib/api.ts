@@ -1,5 +1,11 @@
+import { logger } from "@/lib/logger";
+
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || "";
 const WEBHOOK_SECRET = import.meta.env.VITE_WEBHOOK_SECRET || "";
+
+if (!N8N_WEBHOOK_URL && import.meta.env.MODE === "production") {
+  logger.warn("VITE_N8N_WEBHOOK_URL is not set — RAG queries will fail");
+}
 
 export type RagResponse = {
   query_id: string;
@@ -51,7 +57,7 @@ function buildHeaders(): Record<string, string> {
 export async function queryRagPipeline(
   queryText: string,
   queryId: string,
-  locale: string = "da"
+  locale: string = "da",
 ): Promise<RagResponse> {
   if (!N8N_WEBHOOK_URL) {
     throw new Error("VITE_N8N_WEBHOOK_URL not configured");
@@ -79,9 +85,7 @@ export async function queryRagPipeline(
     try {
       data = await res.json();
     } catch {
-      throw new Error(
-        "Serveren returnerede et ugyldigt svar. Prøv venligst igen om et øjeblik."
-      );
+      throw new Error("Serveren returnerede et ugyldigt svar. Prøv venligst igen om et øjeblik.");
     }
 
     if (!data || typeof (data as RagResponse).analysis?.content !== "string") {
@@ -91,18 +95,13 @@ export async function queryRagPipeline(
   } catch (e) {
     clearTimeout(timeout);
     if (e instanceof DOMException && e.name === "AbortError") {
-      throw new Error(
-        "Forespørgslen tog for lang tid. Prøv venligst igen om et øjeblik."
-      );
+      throw new Error("Forespørgslen tog for lang tid. Prøv venligst igen om et øjeblik.", { cause: e });
     }
     throw e;
   }
 }
 
-export async function queryWebSearch(
-  queryText: string,
-  queryId: string
-): Promise<WebSearchResponse> {
+export async function queryWebSearch(queryText: string, queryId: string): Promise<WebSearchResponse> {
   if (!N8N_WEBHOOK_URL) {
     return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
   }
@@ -127,13 +126,13 @@ export async function queryWebSearch(
     try {
       data = await res.json();
     } catch {
-      console.error("Web search returned invalid JSON");
+      logger.error("Web search returned invalid JSON");
       return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
     }
 
     return data as WebSearchResponse;
   } catch (e) {
-    console.error("Web search failed:", e);
+    logger.error("Web search failed", { error: e instanceof Error ? e.message : String(e) });
     return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
   }
 }

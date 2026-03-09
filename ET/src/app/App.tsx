@@ -9,6 +9,24 @@ import { Toaster } from "@/app/components/ui/sonner";
 const AuthPage = lazy(() => import("@/pages/AuthPage").then((m) => ({ default: m.AuthPage })));
 const DashboardPage = lazy(() => import("@/pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
 
+function ErrorFallback({ error, onReset }: { error: Error; onReset: () => void }) {
+  const t = useLocaleStore((s) => s.t);
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+      <div className="text-center max-w-md p-8">
+        <h1 className="text-2xl font-bold mb-2">{t.common.errorTitle}</h1>
+        <p className="text-muted-foreground mb-4">{error.message}</p>
+        <button
+          onClick={onReset}
+          className="px-4 py-2 bg-foreground text-background rounded hover:opacity-90 transition-opacity"
+        >
+          {t.common.errorReload}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
 
@@ -18,20 +36,14 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
   render() {
     if (this.state.error) {
-      const t = useLocaleStore.getState().t;
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-          <div className="text-center max-w-md p-8">
-            <h1 className="text-2xl font-bold mb-2">{t.common.errorTitle}</h1>
-            <p className="text-muted-foreground mb-4">{this.state.error.message}</p>
-            <button
-              onClick={() => { this.setState({ error: null }); window.location.reload(); }}
-              className="px-4 py-2 bg-foreground text-background rounded hover:opacity-90 transition-opacity"
-            >
-              {t.common.errorReload}
-            </button>
-          </div>
-        </div>
+        <ErrorFallback
+          error={this.state.error}
+          onReset={() => {
+            this.setState({ error: null });
+            window.location.reload();
+          }}
+        />
       );
     }
     return this.props.children;

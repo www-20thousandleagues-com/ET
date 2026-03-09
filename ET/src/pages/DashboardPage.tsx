@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Menu, BarChart3, X } from "lucide-react";
+import { SectionErrorBoundary } from "@/app/components/SectionErrorBoundary";
 import { LeftNav } from "@/app/components/LeftNav";
 import { SourceStrip } from "@/app/components/SourceStrip";
 import { QueryArea } from "@/app/components/QueryArea";
@@ -47,7 +48,10 @@ export function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-white dark:bg-stone-950 overflow-hidden">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-black dark:focus:bg-stone-950 dark:focus:text-white">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-black dark:focus:bg-stone-950 dark:focus:text-white"
+      >
         {t.common.skipToContent}
       </a>
 
@@ -60,47 +64,70 @@ export function DashboardPage() {
         >
           {leftNavOpen ? <X className="size-5 text-foreground" /> : <Menu className="size-5 text-foreground" />}
         </button>
-        <button onClick={() => { closeAllPanels(); goHome(); }} className="font-bold text-foreground tracking-tight hover:text-[var(--brand)] transition-colors">Jaegeren</button>
+        <button
+          onClick={() => {
+            closeAllPanels();
+            goHome();
+          }}
+          className="font-bold text-foreground tracking-tight hover:text-[var(--brand)] transition-colors"
+        >
+          Jaegeren
+        </button>
         <button
           onClick={toggleRightSidebar}
           className="p-2 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
           aria-label={t.common.insights}
         >
-          {rightSidebarOpen ? <X className="size-5 text-foreground" /> : <BarChart3 className="size-5 text-foreground" />}
+          {rightSidebarOpen ? (
+            <X className="size-5 text-foreground" />
+          ) : (
+            <BarChart3 className="size-5 text-foreground" />
+          )}
         </button>
       </div>
 
       {/* Mobile overlay */}
       {(leftNavOpen || rightSidebarOpen) && (
-        <div
-          className="fixed inset-0 z-20 bg-black/40 lg:hidden"
-          onClick={closeAllPanels}
-        />
+        <div className="fixed inset-0 z-20 bg-black/40 lg:hidden" onClick={closeAllPanels} />
       )}
 
       {/* Left nav — always visible on desktop, slide-in on mobile */}
-      <div className={`
+      <div
+        className={`
         fixed inset-y-0 left-0 z-20 w-72 transform transition-transform duration-200 ease-in-out
         lg:relative lg:translate-x-0 lg:w-64 lg:z-0
         ${leftNavOpen ? "translate-x-0" : "-translate-x-full"}
-      `}>
-        <LeftNav />
+      `}
+      >
+        <SectionErrorBoundary>
+          <LeftNav />
+        </SectionErrorBoundary>
       </div>
 
       {/* Main content */}
       <main id="main-content" className="flex-1 flex flex-col min-w-0 pt-14 lg:pt-0">
-        <SourceStrip />
-        <QueryArea />
-        <AnswerArea />
+        <SectionErrorBoundary>
+          <SourceStrip />
+        </SectionErrorBoundary>
+        <SectionErrorBoundary>
+          <QueryArea />
+        </SectionErrorBoundary>
+        <SectionErrorBoundary>
+          <AnswerArea />
+        </SectionErrorBoundary>
       </main>
 
       {/* Right sidebar — always visible on xl+, slide-in on smaller */}
-      <div className={`
+      <div
+        className={`
         fixed inset-y-0 right-0 z-20 w-80 transform transition-transform duration-200 ease-in-out
         xl:relative xl:translate-x-0 xl:z-0
         ${rightSidebarOpen ? "translate-x-0" : "translate-x-full xl:translate-x-0"}
-      `}>
-        <RightSidebar />
+      `}
+      >
+        <SectionErrorBoundary>
+          <RightSidebar />
+        </SectionErrorBoundary>
       </div>
 
       {/* Settings modal */}

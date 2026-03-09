@@ -43,6 +43,8 @@ export const en = {
     feedbackThanks: "Thanks for your feedback",
     showActiveSources: "Show active sources",
     showAllSources: "Show all sources",
+    showMore: "Show more",
+    showLess: "Show less",
   },
   auth: {
     logIn: "Log in",
@@ -57,7 +59,8 @@ export const en = {
     signupSubtitle: "Get started with Jaegeren",
     noAccount: "Don't have an account?",
     hasAccount: "Already have an account?",
-    tagline: "Overview of geopolitical shifts, trade patterns and economic policies — synthesized from multiple sources in real time.",
+    tagline:
+      "Overview of geopolitical shifts, trade patterns and economic policies — synthesized from multiple sources in real time.",
     activeSources: "{count} active sources",
     dailyAnalyses: "Real-time analysis",
     aiPowered: "AI-powered",
@@ -121,7 +124,8 @@ export const en = {
     methodologyStep4: "Confidence Score",
     methodologyVectorSearch: "Your query is embedded and matched against indexed articles in Pinecone.",
     methodologyReranking: "Top results are reranked to select the most relevant passages.",
-    methodologySynthesis: "Claude synthesizes an analysis from the retrieved context, with inline citation markers [1], [2], [3].",
+    methodologySynthesis:
+      "Claude synthesizes an analysis from the retrieved context, with inline citation markers [1], [2], [3].",
     methodologyConfidence: "Based on source agreement, recency, and coverage breadth. Above 70% = High confidence.",
     methodologyFooter: "Sources are ingested every 5 minutes from {count} active feeds via automated RSS pipeline.",
     hideCitations: "Hide citations",
@@ -146,8 +150,10 @@ export const en = {
     neverRun: "Never",
     latestNewsFrom: "Latest news from {name}",
     emailSubject: "Jaegeren: {query}",
-    emailBodyQuery: "Query: {query}\n\n{content}\n\nSources: {primary} primary, {supporting} supporting\nConfidence: {confidence}%",
-    emailBodyDefault: "Please review the latest intelligence briefing.\n\nSources monitored: {sourceCount}\nTotal articles: {articleCount}",
+    emailBodyQuery:
+      "Query: {query}\n\n{content}\n\nSources: {primary} primary, {supporting} supporting\nConfidence: {confidence}%",
+    emailBodyDefault:
+      "Please review the latest intelligence briefing.\n\nSources monitored: {sourceCount}\nTotal articles: {articleCount}",
   },
   time: {
     justNow: "<1 min ago",
@@ -178,7 +184,8 @@ export const en = {
     addGeography: "Add geography",
     geographyPlaceholder: "e.g., Europe, East Asia, Middle East...",
     lenses: "Analytical Lenses",
-    lensesDescription: "Pre-configure prompts that give news a particular perspective. Stories impacted by your lenses will be labeled.",
+    lensesDescription:
+      "Pre-configure prompts that give news a particular perspective. Stories impacted by your lenses will be labeled.",
     addLens: "Add lens",
     lensName: "Lens name",
     lensNamePlaceholder: "e.g., Supply Chain Risk",

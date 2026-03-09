@@ -2,9 +2,11 @@ import type { StateCreator } from "zustand";
 import type { RagQueryResult, RagAnalysis, RagCitation } from "@/types/database";
 import { supabase } from "@/lib/supabase";
 import { queryRagPipeline, queryWebSearch, type RagResponse } from "@/lib/api";
+import { logger } from "@/lib/logger";
 import { useAuthStore } from "@/stores/auth";
 import { useLocaleStore } from "@/stores/locale";
 import type { AppState } from "@/stores/app";
+import { MAX_CACHE_SIZE, FETCH_RECENT_QUERIES_LIMIT } from "@/lib/constants";
 
 const MAX_QUERY_LENGTH = 2000;
 const MIN_QUERY_INTERVAL_MS = 2000;
@@ -36,7 +38,7 @@ function setCachedResult(query: string, result: RagQueryResult): void {
   const key = getCacheKey(query);
   queryCache.set(key, { result, timestamp: Date.now() });
   // Evict old entries if cache grows too large
-  if (queryCache.size > 50) {
+  if (queryCache.size > MAX_CACHE_SIZE) {
     const oldest = queryCache.keys().next().value;
     if (oldest) queryCache.delete(oldest);
   }
@@ -62,18 +64,20 @@ function mapRagResponseToAnalysis(rag: RagResponse): RagAnalysis {
     primary_source_count: rag.analysis.primary_source_count,
     supporting_source_count: rag.analysis.supporting_source_count,
     created_at: new Date().toISOString(),
-    citations: rag.citations.map((c): RagCitation => ({
-      id: generateId(),
-      article_id: c.article_id,
-      relevance_score: c.relevance_score,
-      excerpt: c.excerpt,
-      position: c.position,
-      title: c.title,
-      source_name: c.source_name,
-      source_slug: c.source_slug,
-      published_at: c.published_at,
-      url: c.url,
-    })),
+    citations: rag.citations.map(
+      (c): RagCitation => ({
+        id: generateId(),
+        article_id: c.article_id,
+        relevance_score: c.relevance_score,
+        excerpt: c.excerpt,
+        position: c.position,
+        title: c.title,
+        source_name: c.source_name,
+        source_slug: c.source_slug,
+        published_at: c.published_at,
+        url: c.url,
+      }),
+    ),
   };
 }
 
@@ -128,7 +132,10 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
         queryError: null,
         selectedSource: null,
         sourceArticles: [],
-        recentQueries: [cached, ...state.recentQueries.filter((q) => q.id !== cached.id).slice(0, 19)],
+        recentQueries: [
+          cached,
+          ...state.recentQueries.filter((q) => q.id !== cached.id).slice(0, FETCH_RECENT_QUERIES_LIMIT - 1),
+        ],
       }));
       return;
     }
@@ -140,9 +147,7 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
     // Save query to Supabase (must complete before analysis insert)
     const user = useAuthStore.getState().user;
     if (user) {
-      await supabase
-        .from("queries")
-        .insert({ id: queryId, query_text: trimmed, user_id: user.id, is_saved: false });
+      await supabase.from("queries").insert({ id: queryId, query_text: trimmed, user_id: user.id, is_saved: false });
     }
 
     // Call n8n RAG pipeline + Web Search in parallel
@@ -174,7 +179,7 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
         currentQuery: newQuery,
         queryLoading: false,
         loadingPhase: null,
-        recentQueries: [newQuery, ...state.recentQueries.slice(0, 19)],
+        recentQueries: [newQuery, ...state.recentQueries.slice(0, FETCH_RECENT_QUERIES_LIMIT - 1)],
       }));
 
       // Persist analysis + citations to Supabase in background
@@ -191,8 +196,9 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
               supporting_source_count: analysis.supporting_source_count,
             })
             .select("id")
-            .single()
-        ).then(({ data: analysisRow }) => {
+            .single(),
+        )
+          .then(({ data: analysisRow }) => {
             if (!analysisRow) return;
             const citationRows = analysis.citations.map((c) => ({
               analysis_id: analysisRow.id,
@@ -202,10 +208,14 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
               position: c.position,
             }));
             if (citationRows.length > 0) {
-              Promise.resolve(supabase.from("citations").insert(citationRows)).catch((e: unknown) => console.error("Citation insert failed:", e));
+              Promise.resolve(supabase.from("citations").insert(citationRows)).catch((e: unknown) =>
+                logger.error("Citation insert failed", { error: e instanceof Error ? e.message : String(e) }),
+              );
             }
           })
-          .catch((e: unknown) => console.error("Analysis insert failed:", e));
+          .catch((e: unknown) =>
+            logger.error("Analysis insert failed", { error: e instanceof Error ? e.message : String(e) }),
+          );
       }
     } catch (err) {
       set({
@@ -235,12 +245,11 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
     if (!user) return;
     // Optimistic update
     set((state) => {
-      const updated = state.recentQueries.map((q) =>
-        q.id === queryId ? { ...q, is_saved: !q.is_saved } : q
-      );
-      const currentQuery = state.currentQuery?.id === queryId
-        ? { ...state.currentQuery, is_saved: !state.currentQuery.is_saved }
-        : state.currentQuery;
+      const updated = state.recentQueries.map((q) => (q.id === queryId ? { ...q, is_saved: !q.is_saved } : q));
+      const currentQuery =
+        state.currentQuery?.id === queryId
+          ? { ...state.currentQuery, is_saved: !state.currentQuery.is_saved }
+          : state.currentQuery;
       return { recentQueries: updated, currentQuery };
     });
     try {
@@ -253,9 +262,7 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
     } catch {
       // Revert on error
       set((state) => {
-        const reverted = state.recentQueries.map((q) =>
-          q.id === queryId ? { ...q, is_saved: !q.is_saved } : q
-        );
+        const reverted = state.recentQueries.map((q) => (q.id === queryId ? { ...q, is_saved: !q.is_saved } : q));
         return { recentQueries: reverted };
       });
     }
@@ -267,7 +274,8 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
     try {
       const { data } = await supabase
         .from("queries")
-        .select(`
+        .select(
+          `
           *,
           analysis:analyses(
             *,
@@ -276,9 +284,10 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
               article:articles(*, source:sources(*))
             )
           )
-        `)
+        `,
+        )
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(FETCH_RECENT_QUERIES_LIMIT);
 
       // Supabase returns `analysis` as an array (1:many join). Extract first item.
       const mapped: RagQueryResult[] = (data ?? []).map((row: Record<string, unknown>) => {

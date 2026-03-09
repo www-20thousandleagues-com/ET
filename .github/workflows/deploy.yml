@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: CI / Deploy
 
 on:
   push:
@@ -10,11 +10,19 @@ on:
     branches: [main]
     paths:
       - 'ET/**'
+      - '.github/workflows/deploy.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   check:
     name: Lint & Typecheck
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ET
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,25 +34,24 @@ jobs:
           cache: pnpm
           cache-dependency-path: ET/pnpm-lock.yaml
       - name: Install dependencies
-        working-directory: ET
         run: pnpm install --frozen-lockfile
       - name: Typecheck (build)
-        working-directory: ET
-        run: pnpm build
+        run: pnpm run build
       - name: Lint
-        working-directory: ET
-        run: pnpm lint || true
+        run: pnpm run lint
       - name: Test
-        working-directory: ET
-        run: pnpm test
+        run: pnpm run test
       - name: Format check
-        working-directory: ET
-        run: pnpm format:check
+        run: pnpm run format:check
 
   build:
-    name: Build
+    name: Build Docker image
     needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ET
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -55,11 +62,10 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: ET/pnpm-lock.yaml
-      - name: Install and build
-        working-directory: ET
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build
 
   deploy:
     name: Deploy to Production

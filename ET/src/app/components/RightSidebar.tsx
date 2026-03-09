@@ -1,7 +1,9 @@
 import { Send, TrendingUp, Newspaper, Activity, CheckCircle, AlertTriangle } from "lucide-react";
+import { useMemo } from "react";
 import { useLocaleStore } from "@/stores/locale";
 import { useAppStore } from "@/stores/app";
 import { toast } from "sonner";
+import { HEALTH_THRESHOLD_MS, MAX_RECENT_ITEMS } from "@/lib/constants";
 
 function timeSince(dateStr: string, t: ReturnType<typeof useLocaleStore.getState>["t"]): string {
   const date = new Date(dateStr);
@@ -27,9 +29,10 @@ export function RightSidebar() {
   const totalArticleCount = useAppStore((s) => s.totalArticleCount);
 
   // Health: if last ingestion was more than 2 hours ago, status is degraded
-  const isHealthy = lastIngestionTime
-    ? Date.now() - new Date(lastIngestionTime).getTime() < 2 * 60 * 60 * 1000
-    : false;
+  const isHealthy = useMemo(
+    () => (lastIngestionTime ? Date.now() - new Date(lastIngestionTime).getTime() < HEALTH_THRESHOLD_MS : false),
+    [lastIngestionTime],
+  );
 
   const handleSendToAnalyst = () => {
     const analysis = currentQuery?.analysis;
@@ -57,17 +60,20 @@ export function RightSidebar() {
   const topSources = sources
     .filter((s) => s.article_count > 0)
     .sort((a, b) => b.article_count - a.article_count)
-    .slice(0, 5);
+    .slice(0, MAX_RECENT_ITEMS);
 
   // Latest articles
-  const latestArticles = recentArticles.slice(0, 5);
+  const latestArticles = recentArticles.slice(0, MAX_RECENT_ITEMS);
 
   return (
     <aside className="w-full h-screen border-l border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex flex-col overflow-y-auto">
       <div className="p-6">
         {/* Send to Analyst CTA */}
         <button
-          onClick={() => { handleSendToAnalyst(); toast.success(t.sidebar.sendToAnalyst); }}
+          onClick={() => {
+            handleSendToAnalyst();
+            toast.success(t.sidebar.sendToAnalyst);
+          }}
           className={`w-full px-4 py-3 rounded transition-colors flex items-center justify-center gap-2 mb-6 font-medium ${
             currentQuery?.analysis
               ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]"

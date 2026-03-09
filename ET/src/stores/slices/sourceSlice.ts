@@ -2,6 +2,7 @@ import type { StateCreator } from "zustand";
 import type { Source } from "@/types/database";
 import { supabase } from "@/lib/supabase";
 import type { AppState } from "@/stores/app";
+import { FETCH_RECENT_ARTICLES_LIMIT, FETCH_SOURCE_ARTICLES_LIMIT } from "@/lib/constants";
 
 type RecentArticle = {
   id: string;
@@ -79,7 +80,7 @@ export const createSourceSlice: StateCreator<AppState, [], [], SourceSlice> = (s
         .from("articles")
         .select("id, title, published_at, url, source:sources(name)")
         .order("published_at", { ascending: false })
-        .limit(20);
+        .limit(FETCH_RECENT_ARTICLES_LIMIT);
       set({ recentArticles: (data ?? []).map((a: Record<string, unknown>) => mapArticleRow(a)) });
     } catch {
       set({ recentArticles: [] });
@@ -98,7 +99,7 @@ export const createSourceSlice: StateCreator<AppState, [], [], SourceSlice> = (s
         .select("id, title, published_at, url, source:sources(name)")
         .eq("source_id", source.id)
         .order("published_at", { ascending: false })
-        .limit(50);
+        .limit(FETCH_SOURCE_ARTICLES_LIMIT);
       set({
         sourceArticles: (data ?? []).map((a: Record<string, unknown>) => mapArticleRow(a)),
         sourceArticlesLoading: false,
@@ -131,9 +132,7 @@ export const createSourceSlice: StateCreator<AppState, [], [], SourceSlice> = (s
         .limit(1);
       const latest = data?.[0]?.ingested_at ?? null;
 
-      const { count } = await supabase
-        .from("articles")
-        .select("*", { count: "exact", head: true });
+      const { count } = await supabase.from("articles").select("*", { count: "exact", head: true });
 
       set({ lastIngestionTime: latest, totalArticleCount: count ?? 0 });
     } catch {
