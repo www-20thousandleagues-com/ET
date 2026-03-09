@@ -7,9 +7,15 @@ import { toast } from "sonner";
 export function SettingsModal() {
   const t = useLocaleStore((s) => s.t);
   const {
-    topics, addTopic, removeTopic,
-    geographies, addGeography, removeGeography,
-    lenses, addLens, removeLens,
+    topics,
+    addTopic,
+    removeTopic,
+    geographies,
+    addGeography,
+    removeGeography,
+    lenses,
+    addLens,
+    removeLens,
     closeSettings,
   } = useSettingsStore();
 
@@ -49,7 +55,11 @@ export function SettingsModal() {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-lg font-bold text-foreground">{t.settings.title}</h2>
-          <button onClick={closeSettings} className="p-1.5 hover:bg-accent rounded transition-colors" aria-label={t.settings.close}>
+          <button
+            onClick={closeSettings}
+            className="p-1.5 hover:bg-accent rounded transition-colors"
+            aria-label={t.settings.close}
+          >
             <X className="size-5" />
           </button>
         </div>
@@ -83,9 +93,16 @@ export function SettingsModal() {
             {topics.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {topics.map((topic) => (
-                  <span key={topic} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-accent text-foreground rounded-full border border-border">
+                  <span
+                    key={topic}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-accent text-foreground rounded-full border border-border"
+                  >
                     {topic}
-                    <button onClick={() => removeTopic(topic)} className="hover:text-red-500 transition-colors" aria-label={t.settings.remove}>
+                    <button
+                      onClick={() => removeTopic(topic)}
+                      className="hover:text-red-500 transition-colors"
+                      aria-label={t.settings.remove}
+                    >
                       <X className="size-3" />
                     </button>
                   </span>
@@ -123,9 +140,16 @@ export function SettingsModal() {
             {geographies.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {geographies.map((geo) => (
-                  <span key={geo} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-800">
+                  <span
+                    key={geo}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-800"
+                  >
                     {geo}
-                    <button onClick={() => removeGeography(geo)} className="hover:text-red-500 transition-colors" aria-label={t.settings.remove}>
+                    <button
+                      onClick={() => removeGeography(geo)}
+                      className="hover:text-red-500 transition-colors"
+                      aria-label={t.settings.remove}
+                    >
                       <X className="size-3" />
                     </button>
                   </span>

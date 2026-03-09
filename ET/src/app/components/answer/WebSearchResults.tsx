@@ -42,9 +42,7 @@ export function WebSearchResults({ results, t }: WebSearchResultsProps) {
                     {t.answer.web}
                   </span>
                   {r.published_date && (
-                    <span className="text-xs text-muted-foreground">
-                      {safeFormatDate(r.published_date)}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{safeFormatDate(r.published_date)}</span>
                   )}
                 </div>
                 <h4 className="text-sm font-medium text-foreground mb-1 group-hover:text-brand transition-colors">

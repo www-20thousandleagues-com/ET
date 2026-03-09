@@ -63,14 +63,23 @@ export function ExportMenu({ isOpen, onToggle, onClose, onExport, t }: ExportMen
           <div className="fixed inset-0 z-10" onClick={onClose} />
           <div className="absolute right-0 top-full mt-1 w-48 bg-card border-2 border-foreground rounded shadow-lg z-20">
             <div className="py-1">
-              <button onClick={() => onExport("md")} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors">
+              <button
+                onClick={() => onExport("md")}
+                className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+              >
                 {t.common.exportMd}
               </button>
-              <button onClick={() => onExport("txt")} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors">
+              <button
+                onClick={() => onExport("txt")}
+                className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+              >
                 {t.answer.exportText}
               </button>
               <div className="border-t border-border my-1" />
-              <button onClick={() => onExport("email")} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors">
+              <button
+                onClick={() => onExport("email")}
+                className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+              >
                 {t.common.sendEmail}
               </button>
             </div>

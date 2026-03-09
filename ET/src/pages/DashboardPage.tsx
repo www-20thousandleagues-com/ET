@@ -56,7 +56,7 @@ export function DashboardPage() {
       </a>
 
       {/* Mobile header */}
-      <div className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 lg:hidden">
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 lg:hidden">
         <button
           onClick={toggleLeftNav}
           className="p-2 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
@@ -88,14 +88,14 @@ export function DashboardPage() {
 
       {/* Mobile overlay */}
       {(leftNavOpen || rightSidebarOpen) && (
-        <div className="fixed inset-0 z-20 bg-black/40 lg:hidden" onClick={closeAllPanels} />
+        <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={closeAllPanels} />
       )}
 
       {/* Left nav — always visible on desktop, slide-in on mobile */}
       <div
         className={`
-        fixed inset-y-0 left-0 z-20 w-72 transform transition-transform duration-200 ease-in-out
-        lg:relative lg:translate-x-0 lg:w-64 lg:z-0
+        fixed top-14 bottom-0 left-0 z-30 w-72 transform transition-transform duration-200 ease-in-out
+        lg:relative lg:top-0 lg:translate-x-0 lg:w-64 lg:z-0
         ${leftNavOpen ? "translate-x-0" : "-translate-x-full"}
       `}
       >
@@ -120,8 +120,8 @@ export function DashboardPage() {
       {/* Right sidebar — always visible on xl+, slide-in on smaller */}
       <div
         className={`
-        fixed inset-y-0 right-0 z-20 w-80 transform transition-transform duration-200 ease-in-out
-        xl:relative xl:translate-x-0 xl:z-0
+        fixed top-14 bottom-0 right-0 z-30 w-80 transform transition-transform duration-200 ease-in-out
+        xl:relative xl:top-0 xl:translate-x-0 xl:z-0
         ${rightSidebarOpen ? "translate-x-0" : "translate-x-full xl:translate-x-0"}
       `}
       >

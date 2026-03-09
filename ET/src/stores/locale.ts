@@ -34,6 +34,6 @@ export const useLocaleStore = create<LocaleState>()(
           document.documentElement.lang = state.locale;
         }
       },
-    }
-  )
+    },
+  ),
 );

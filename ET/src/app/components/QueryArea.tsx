@@ -84,7 +84,10 @@ export function QueryArea() {
             {quickQueries.map((q) => (
               <button
                 key={q}
-                onClick={() => { setQuery(q); submitQuery(q); }}
+                onClick={() => {
+                  setQuery(q);
+                  submitQuery(q);
+                }}
                 className="px-3 py-1 text-xs border-2 border-black dark:border-white bg-transparent hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black rounded transition-colors"
               >
                 {q}

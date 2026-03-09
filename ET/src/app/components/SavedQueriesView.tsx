@@ -26,9 +26,7 @@ export function SavedQueriesView({ onClose }: { onClose: () => void }) {
             <Bookmark className="size-5 text-[var(--brand)]" />
             <h2 className="text-lg font-bold text-foreground">{t.nav.savedQueries}</h2>
           </div>
-          <span className="text-sm text-muted-foreground">
-            ({savedQueries.length})
-          </span>
+          <span className="text-sm text-muted-foreground">({savedQueries.length})</span>
         </div>
 
         {savedQueries.length > 0 ? (
@@ -40,7 +38,10 @@ export function SavedQueriesView({ onClose }: { onClose: () => void }) {
               >
                 <div className="flex items-start justify-between gap-4">
                   <button
-                    onClick={() => { onClose(); submitQuery(query.query_text); }}
+                    onClick={() => {
+                      onClose();
+                      submitQuery(query.query_text);
+                    }}
                     className="flex-1 min-w-0 text-left"
                   >
                     <h4 className="text-sm font-medium text-foreground mb-1 group-hover:text-[var(--brand)] transition-colors">
@@ -51,9 +52,13 @@ export function SavedQueriesView({ onClose }: { onClose: () => void }) {
                       {query.analysis && (
                         <>
                           <span>&bull;</span>
-                          <span>{query.analysis.confidence}% {t.answer.confidence.toLowerCase()}</span>
+                          <span>
+                            {query.analysis.confidence}% {t.answer.confidence.toLowerCase()}
+                          </span>
                           <span>&bull;</span>
-                          <span>{query.analysis.citations.length} {t.answer.citationsAndSources.toLowerCase()}</span>
+                          <span>
+                            {query.analysis.citations.length} {t.answer.citationsAndSources.toLowerCase()}
+                          </span>
                         </>
                       )}
                     </div>

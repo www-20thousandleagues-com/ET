@@ -16,6 +16,6 @@ test.describe("Health Checks", () => {
     const response = await request.get("/some-random-path");
     expect(response.status()).toBe(200);
     const body = await response.text();
-    expect(body).toContain("id=\"root\"");
+    expect(body).toContain('id="root"');
   });
 });

@@ -38,9 +38,7 @@ function CitationCard({ citation, sortBy, t }: { citation: RagCitation; sortBy: 
             <span className="text-xs font-bold text-foreground bg-accent px-2 py-0.5 rounded">
               {citation.source_name}
             </span>
-            <span className="text-xs text-muted-foreground">
-              {safeFormatDate(citation.published_at)}
-            </span>
+            <span className="text-xs text-muted-foreground">{safeFormatDate(citation.published_at)}</span>
             {sortBy === "relevance" && (
               <span className="text-xs text-muted-foreground">
                 &bull; {citation.relevance_score}% {t.answer.match}
@@ -118,7 +116,10 @@ export function CitationListSection({
                     {sourceNames.map((source) => (
                       <button
                         key={source}
-                        onClick={() => { setFilterSource(source); setActiveMenu(null); }}
+                        onClick={() => {
+                          setFilterSource(source);
+                          setActiveMenu(null);
+                        }}
                         className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-accent transition-colors flex items-center justify-between"
                       >
                         <span>{source === "all" ? t.answer.all : source}</span>
@@ -149,7 +150,10 @@ export function CitationListSection({
                     {(["relevance", "date", "source"] as SortOption[]).map((opt) => (
                       <button
                         key={opt}
-                        onClick={() => { setSortBy(opt); setActiveMenu(null); }}
+                        onClick={() => {
+                          setSortBy(opt);
+                          setActiveMenu(null);
+                        }}
                         className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-accent transition-colors flex items-center justify-between"
                       >
                         <span>{sortLabels[opt]}</span>

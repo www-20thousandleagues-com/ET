@@ -36,9 +36,7 @@ test.describe("App Loading", () => {
     });
     await page.reload();
     // At least some assets should have long cache
-    const cachedAssets = responses.filter((r) =>
-      r.cacheControl.includes("max-age"),
-    );
+    const cachedAssets = responses.filter((r) => r.cacheControl.includes("max-age"));
     expect(cachedAssets.length).toBeGreaterThan(0);
   });
 });

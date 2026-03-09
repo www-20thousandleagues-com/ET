@@ -52,7 +52,12 @@ export function CitationContent({ content, citations, showBrackets = true }: Cit
         }
         const cit = part.citation;
         if (!showBrackets) return null;
-        if (!cit) return <span key={i} className="text-muted-foreground">{part.value}</span>;
+        if (!cit)
+          return (
+            <span key={i} className="text-muted-foreground">
+              {part.value}
+            </span>
+          );
         return (
           <span key={i} className="relative group/cite inline">
             {cit.url && isSafeUrl(cit.url) ? (
@@ -69,7 +74,9 @@ export function CitationContent({ content, citations, showBrackets = true }: Cit
             )}
             <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-card border-2 border-foreground rounded shadow-lg text-xs z-50 hidden group-hover/cite:block pointer-events-none">
               <span className="font-bold text-foreground block mb-1">{cit.title}</span>
-              <span className="text-muted-foreground block">{cit.source_name} &bull; {safeFormatDate(cit.published_at)}</span>
+              <span className="text-muted-foreground block">
+                {cit.source_name} &bull; {safeFormatDate(cit.published_at)}
+              </span>
               {cit.excerpt && <span className="text-muted-foreground block mt-1 line-clamp-2">{cit.excerpt}</span>}
             </span>
           </span>

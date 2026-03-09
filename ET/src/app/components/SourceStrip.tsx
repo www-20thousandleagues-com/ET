@@ -52,11 +52,11 @@ export function SourceStrip() {
                 }`}
               >
                 <span>{source.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                  selectedSource?.id === source.id
-                    ? "bg-white/20"
-                    : "bg-stone-200 dark:bg-stone-700"
-                }`}>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                    selectedSource?.id === source.id ? "bg-white/20" : "bg-stone-200 dark:bg-stone-700"
+                  }`}
+                >
                   {source.article_count}
                 </span>
               </button>
@@ -83,7 +83,11 @@ export function SourceStrip() {
               : "border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-400 hover:border-black dark:hover:border-white hover:text-black dark:hover:text-white"
           }`}
         >
-          <span className="hidden sm:inline">{showAllSources ? `${t.common.showActiveSources} (${displaySources.length})` : `${t.common.showAllSources} (${sources.length})`}</span>
+          <span className="hidden sm:inline">
+            {showAllSources
+              ? `${t.common.showActiveSources} (${displaySources.length})`
+              : `${t.common.showAllSources} (${sources.length})`}
+          </span>
           <span className="sm:hidden">{showAllSources ? displaySources.length : sources.length}</span>
         </button>
       </div>

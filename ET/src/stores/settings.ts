@@ -100,6 +100,6 @@ export const useSettingsStore = create<SettingsState>()(
         lenses: state.lenses,
         showCitationBrackets: state.showCitationBrackets,
       }),
-    }
-  )
+    },
+  ),
 );
