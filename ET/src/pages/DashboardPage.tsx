@@ -5,7 +5,9 @@ import { SourceStrip } from "@/app/components/SourceStrip";
 import { QueryArea } from "@/app/components/QueryArea";
 import { AnswerArea } from "@/app/components/AnswerArea";
 import { RightSidebar } from "@/app/components/RightSidebar";
+import { SettingsModal } from "@/app/components/SettingsModal";
 import { useAppStore } from "@/stores/app";
+import { useSettingsStore } from "@/stores/settings";
 import { useLocaleStore } from "@/stores/locale";
 
 export function DashboardPage() {
@@ -19,6 +21,9 @@ export function DashboardPage() {
   const toggleLeftNav = useAppStore((s) => s.toggleLeftNav);
   const toggleRightSidebar = useAppStore((s) => s.toggleRightSidebar);
   const closeAllPanels = useAppStore((s) => s.closeAllPanels);
+  const goHome = useAppStore((s) => s.goHome);
+  const clearError = useAppStore((s) => s.clearError);
+  const settingsOpen = useSettingsStore((s) => s.settingsOpen);
   const t = useLocaleStore((s) => s.t);
 
   useEffect(() => {
@@ -28,6 +33,17 @@ export function DashboardPage() {
     fetchRecentQueries();
     fetchSystemHealth();
   }, [fetchSources, fetchRecentArticles, fetchQueryCountToday, fetchRecentQueries, fetchSystemHealth]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        clearError();
+        closeAllPanels();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [clearError, closeAllPanels]);
 
   return (
     <div className="flex h-screen bg-white dark:bg-stone-950 overflow-hidden">
@@ -44,7 +60,7 @@ export function DashboardPage() {
         >
           {leftNavOpen ? <X className="size-5 text-foreground" /> : <Menu className="size-5 text-foreground" />}
         </button>
-        <h1 className="font-bold text-foreground tracking-tight">Jaegeren</h1>
+        <button onClick={() => { closeAllPanels(); goHome(); }} className="font-bold text-foreground tracking-tight hover:text-[var(--brand)] transition-colors">Jaegeren</button>
         <button
           onClick={toggleRightSidebar}
           className="p-2 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
@@ -86,6 +102,9 @@ export function DashboardPage() {
       `}>
         <RightSidebar />
       </div>
+
+      {/* Settings modal */}
+      {settingsOpen && <SettingsModal />}
     </div>
   );
 }

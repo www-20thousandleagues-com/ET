@@ -1,9 +1,12 @@
 import { Send, TrendingUp, Newspaper, Activity, CheckCircle, AlertTriangle } from "lucide-react";
 import { useLocaleStore } from "@/stores/locale";
 import { useAppStore } from "@/stores/app";
+import { toast } from "sonner";
 
 function timeSince(dateStr: string, t: ReturnType<typeof useLocaleStore.getState>["t"]): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "—";
+  const diff = Date.now() - date.getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return t.time.justNow;
   if (mins < 60) return t.time.minutesAgo.replace("{n}", String(mins));
@@ -64,8 +67,13 @@ export function RightSidebar() {
       <div className="p-6">
         {/* Send to Analyst CTA */}
         <button
-          onClick={handleSendToAnalyst}
-          className="w-full px-4 py-3 bg-[var(--brand)] text-white rounded hover:bg-[var(--brand-hover)] transition-colors flex items-center justify-center gap-2 mb-6 font-medium"
+          onClick={() => { handleSendToAnalyst(); toast.success(t.sidebar.sendToAnalyst); }}
+          className={`w-full px-4 py-3 rounded transition-colors flex items-center justify-center gap-2 mb-6 font-medium ${
+            currentQuery?.analysis
+              ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]"
+              : "bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-300 dark:hover:bg-stone-600"
+          }`}
+          title={currentQuery?.analysis ? t.sidebar.sendToAnalyst : t.sidebar.emailBodyDefault.split("\n")[0]}
         >
           <Send className="size-4" />
           <span>{t.sidebar.sendToAnalyst}</span>

@@ -60,25 +60,43 @@ export async function queryRagPipeline(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
 
-  const res = await fetch(`${N8N_WEBHOOK_URL}/jaegeren-query`, {
-    method: "POST",
-    headers: buildHeaders(),
-    body: JSON.stringify({ query_text: queryText, query_id: queryId, locale }),
-    signal: controller.signal,
-    keepalive: true,
-  });
+  try {
+    const res = await fetch(`${N8N_WEBHOOK_URL}/jaegeren-query`, {
+      method: "POST",
+      headers: buildHeaders(),
+      body: JSON.stringify({ query_text: queryText, query_id: queryId, locale }),
+      signal: controller.signal,
+      keepalive: true,
+    });
 
-  clearTimeout(timeout);
+    clearTimeout(timeout);
 
-  if (!res.ok) {
-    throw new Error(`RAG pipeline error: ${res.status}`);
+    if (!res.ok) {
+      throw new Error(`RAG pipeline error: ${res.status}`);
+    }
+
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error(
+        "Serveren returnerede et ugyldigt svar. Prøv venligst igen om et øjeblik."
+      );
+    }
+
+    if (!data || typeof (data as RagResponse).analysis?.content !== "string") {
+      throw new Error("Invalid RAG response structure");
+    }
+    return data as RagResponse;
+  } catch (e) {
+    clearTimeout(timeout);
+    if (e instanceof DOMException && e.name === "AbortError") {
+      throw new Error(
+        "Forespørgslen tog for lang tid. Prøv venligst igen om et øjeblik."
+      );
+    }
+    throw e;
   }
-
-  const data = await res.json();
-  if (!data || typeof data.analysis?.content !== "string") {
-    throw new Error("Invalid RAG response structure");
-  }
-  return data as RagResponse;
 }
 
 export async function queryWebSearch(
@@ -104,7 +122,15 @@ export async function queryWebSearch(
     clearTimeout(timeout);
 
     if (!res.ok) return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
-    const data = await res.json();
+
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch {
+      console.error("Web search returned invalid JSON");
+      return { query_id: queryId, query_text: queryText, web_results: [], result_count: 0 };
+    }
+
     return data as WebSearchResponse;
   } catch (e) {
     console.error("Web search failed:", e);

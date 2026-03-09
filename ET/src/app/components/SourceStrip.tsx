@@ -76,14 +76,15 @@ export function SourceStrip() {
 
         <button
           onClick={toggleShowAllSources}
+          title={showAllSources ? t.common.showActiveSources : t.common.showAllSources}
           className={`text-xs px-3 py-1.5 rounded-full border transition-colors flex-shrink-0 ${
             showAllSources
               ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
               : "border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-400 hover:border-black dark:hover:border-white hover:text-black dark:hover:text-white"
           }`}
         >
-          <span className="hidden sm:inline">{showAllSources ? `${t.common.configure} (${sources.length})` : `${t.common.configure} (${displaySources.length}/${sources.length})`}</span>
-          <span className="sm:hidden">{displaySources.length}/{sources.length}</span>
+          <span className="hidden sm:inline">{showAllSources ? `${t.common.showActiveSources} (${displaySources.length})` : `${t.common.showAllSources} (${sources.length})`}</span>
+          <span className="sm:hidden">{showAllSources ? displaySources.length : sources.length}</span>
         </button>
       </div>
     </div>

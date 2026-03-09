@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { useAuthStore } from "@/stores/auth";
 import { useLocaleStore } from "@/stores/locale";
 import { ProtectedRoute } from "@/app/components/ProtectedRoute";
+import { Toaster } from "@/app/components/ui/sonner";
 
 const AuthPage = lazy(() => import("@/pages/AuthPage").then((m) => ({ default: m.AuthPage })));
 const DashboardPage = lazy(() => import("@/pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
@@ -72,6 +73,7 @@ export default function App() {
             </Routes>
           </Suspense>
         </BrowserRouter>
+        <Toaster />
       </ThemeProvider>
     </ErrorBoundary>
   );
