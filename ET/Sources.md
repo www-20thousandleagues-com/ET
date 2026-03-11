@@ -3,6 +3,7 @@
 ## News Aggregator APIs
 
 ### NewsAPI.ai (EventRegistry)
+
 - **Site**: https://newsapi.ai
 - **API**: `https://eventregistry.org/api/v1/article/getArticles`
 - **Docs**: https://newsapi.ai/documentation
@@ -10,6 +11,7 @@
 - 150,000+ sources, 60+ languages, real-time + historical back to 2015
 
 ### SerpAPI
+
 - **Site**: https://serpapi.com
 - **API**: `https://serpapi.com/search.json`
 - **Docs**: https://serpapi.com/search-api
@@ -17,6 +19,7 @@
 - Parses Google, Bing, Yahoo, DuckDuckGo SERPs as structured JSON
 
 ### Tavily
+
 - **Site**: https://tavily.com
 - **API**: `https://api.tavily.com/search` (POST)
 - **Docs**: https://docs.tavily.com
@@ -24,6 +27,7 @@
 - AI-native search optimized for LLM agents, returns clean summarized content
 
 ### Perplexity
+
 - **Site**: https://perplexity.ai
 - **API**: `https://api.perplexity.ai/chat/completions` (OpenAI-compatible)
 - **Docs**: https://docs.perplexity.ai
@@ -31,6 +35,7 @@
 - LLM with live web search grounding via Sonar models
 
 ### Mediastack
+
 - **Site**: https://mediastack.com
 - **API**: `http://api.mediastack.com/v1/news`
 - **Docs**: https://mediastack.com/documentation
@@ -38,6 +43,7 @@
 - Live + historical global news JSON API, filter by country/language/category
 
 ### NewsCatcher API
+
 - **Site**: https://newscatcherapi.com
 - **API**: `https://v3-api.newscatcherapi.com/api/search`
 - **Docs**: https://www.newscatcherapi.com/docs/v3/api-reference/overview/introduction
@@ -45,6 +51,7 @@
 - 60,000+ sources, 150 countries, 60 languages
 
 ### GDELT Project
+
 - **Site**: https://www.gdeltproject.org
 - **API**: `https://api.gdeltproject.org/api/v2/doc/doc`
 - **GEO API**: `https://api.gdeltproject.org/api/v2/geo/geo`
@@ -58,6 +65,7 @@
 ## Danish / Nordic Sources
 
 ### Danmarks Statistik
+
 - **Site**: https://www.dst.dk
 - **RSS (DA)**: `https://rss.dst.dk/da`
 - **RSS (EN)**: `https://rss.dst.dk/en`
@@ -66,12 +74,14 @@
 - Official Danish statistics — demographics, economy, labor market
 
 ### Berlingske
+
 - **Site**: https://www.berlingske.dk
 - **RSS**: `https://www.berlingske.dk/content/rss`
 - **Cost**: RSS free (headlines) · Full articles paywalled
 - Major Danish newspaper — politics, business, culture
 
 ### Børsen
+
 - **Site**: https://borsen.dk
 - **RSS**: `https://borsen.dk/rss/investor`
 - **Cost**: RSS free (headlines) · Full articles paywalled
@@ -82,6 +92,7 @@
 ## European & International Data
 
 ### Eurostat
+
 - **Site**: https://ec.europa.eu/eurostat
 - **RSS (EN)**: `https://ec.europa.eu/eurostat/api/dissemination/catalogue/rss/en/statistics-update.rss`
 - **RSS (DE)**: `https://ec.europa.eu/eurostat/api/dissemination/catalogue/rss/de/statistics-update.rss`
@@ -93,6 +104,7 @@
 - All EU statistics — economics, demographics, energy, trade. JSON/CSV/XML.
 
 ### OECD
+
 - **Site**: https://www.oecd.org
 - **RSS Feeds**: https://search.oecd.org/rssfeeds/
 - **API (SDMX)**: `https://sdmx.oecd.org/public/rest/data/`
@@ -101,6 +113,7 @@
 - Economic and social statistics for OECD member countries
 
 ### Energy Data Service (Energinet)
+
 - **Site**: https://www.energidataservice.dk
 - **API**: `https://api.energidataservice.dk/dataset/{datasetName}`
 - **Guides**: https://www.energidataservice.dk/guides/api-guides
@@ -110,6 +123,7 @@
 - Example: `https://api.energidataservice.dk/dataset/Elspotprices?start=2024-01-01&filter={"PriceArea":["DK1"]}`
 
 ### Financial Times
+
 - **Site**: https://www.ft.com
 - **RSS Home**: `https://www.ft.com/rss/home`
 - **RSS World**: `https://www.ft.com/world?format=rss`
@@ -120,6 +134,7 @@
 - Pattern: `https://www.ft.com/{section}?format=rss`
 
 ### The Economist
+
 - **Site**: https://www.economist.com
 - **RSS Finance**: `https://www.economist.com/finance-and-economics/rss.xml`
 - **RSS Business**: `https://www.economist.com/business/rss.xml`
@@ -132,6 +147,7 @@
 - Pattern: `https://www.economist.com/{section}/rss.xml`
 
 ### Bruegel
+
 - **Site**: https://www.bruegel.org
 - **RSS All**: `https://www.bruegel.org/rss?type=all`
 - **RSS Publications**: `https://www.bruegel.org/rss?type=pub`
@@ -143,6 +159,7 @@
 - European economics think tank — EU policy, trade, energy, financial regulation
 
 ### EU Commission
+
 - **Site**: https://commission.europa.eu
 - **Press Corner**: https://ec.europa.eu/commission/presscorner/home/en
 - **EU Parliament RSS**: `https://webcomm-api-rss.ep-lavinia.eu/en/feeds/european-parliament-news-website`
@@ -157,22 +174,22 @@
 
 ## Quick Reference
 
-| Source | Type | Cost | Key Endpoint |
-|---|---|---|---|
-| NewsAPI.ai | API | Freemium | `eventregistry.org/api/v1/` |
-| SerpAPI | API | $50+/mo | `serpapi.com/search.json` |
-| Tavily | API | Freemium | `api.tavily.com/search` |
-| Perplexity | API | Pay-per-use | `api.perplexity.ai/chat/completions` |
-| Mediastack | API | Freemium | `api.mediastack.com/v1/news` |
-| NewsCatcher | API | Freemium | `v3-api.newscatcherapi.com/api/search` |
-| GDELT | API | FREE | `api.gdeltproject.org/api/v2/doc/doc` |
-| Danmarks Statistik | RSS | FREE | `rss.dst.dk/da` |
-| Berlingske | RSS | Free/Paywall | `berlingske.dk/content/rss` |
-| Børsen | RSS | Free/Paywall | `borsen.dk/rss/investor` |
-| Eurostat | RSS+API | FREE | `ec.europa.eu/eurostat/api/...` |
-| OECD | RSS+API | FREE | `sdmx.oecd.org/public/rest/data/` |
-| Energinet | API | FREE | `api.energidataservice.dk/dataset/` |
-| Financial Times | RSS | Free/Paywall | `ft.com/rss/home` |
-| The Economist | RSS | Free/Paywall | `economist.com/{section}/rss.xml` |
-| Bruegel | RSS | FREE | `bruegel.org/rss?type=all` |
-| EU Commission | RSS | FREE | Multiple per institution |
+| Source             | Type    | Cost         | Key Endpoint                           |
+| ------------------ | ------- | ------------ | -------------------------------------- |
+| NewsAPI.ai         | API     | Freemium     | `eventregistry.org/api/v1/`            |
+| SerpAPI            | API     | $50+/mo      | `serpapi.com/search.json`              |
+| Tavily             | API     | Freemium     | `api.tavily.com/search`                |
+| Perplexity         | API     | Pay-per-use  | `api.perplexity.ai/chat/completions`   |
+| Mediastack         | API     | Freemium     | `api.mediastack.com/v1/news`           |
+| NewsCatcher        | API     | Freemium     | `v3-api.newscatcherapi.com/api/search` |
+| GDELT              | API     | FREE         | `api.gdeltproject.org/api/v2/doc/doc`  |
+| Danmarks Statistik | RSS     | FREE         | `rss.dst.dk/da`                        |
+| Berlingske         | RSS     | Free/Paywall | `berlingske.dk/content/rss`            |
+| Børsen             | RSS     | Free/Paywall | `borsen.dk/rss/investor`               |
+| Eurostat           | RSS+API | FREE         | `ec.europa.eu/eurostat/api/...`        |
+| OECD               | RSS+API | FREE         | `sdmx.oecd.org/public/rest/data/`      |
+| Energinet          | API     | FREE         | `api.energidataservice.dk/dataset/`    |
+| Financial Times    | RSS     | Free/Paywall | `ft.com/rss/home`                      |
+| The Economist      | RSS     | Free/Paywall | `economist.com/{section}/rss.xml`      |
+| Bruegel            | RSS     | FREE         | `bruegel.org/rss?type=all`             |
+| EU Commission      | RSS     | FREE         | Multiple per institution               |

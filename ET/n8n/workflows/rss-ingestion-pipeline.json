@@ -182,34 +182,22 @@
   ],
   "connections": {
     "Every 30 Minutes": {
-      "main": [
-        [{ "node": "Fetch Source IDs", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Fetch Source IDs", "type": "main", "index": 0 }]]
     },
     "On-Demand Webhook": {
-      "main": [
-        [{ "node": "Fetch Source IDs", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Fetch Source IDs", "type": "main", "index": 0 }]]
     },
     "Fetch Source IDs": {
-      "main": [
-        [{ "node": "Feed List", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Feed List", "type": "main", "index": 0 }]]
     },
     "Feed List": {
-      "main": [
-        [{ "node": "Read RSS", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Read RSS", "type": "main", "index": 0 }]]
     },
     "Read RSS": {
-      "main": [
-        [{ "node": "Process Articles", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Process Articles", "type": "main", "index": 0 }]]
     },
     "Process Articles": {
-      "main": [
-        [{ "node": "Filter Empty", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Filter Empty", "type": "main", "index": 0 }]]
     },
     "Filter Empty": {
       "main": [
@@ -220,9 +208,7 @@
       ]
     },
     "Upsert to Supabase": {
-      "main": [
-        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
     }
   },
   "settings": {

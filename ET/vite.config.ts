@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
-import path from 'path'
-import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import path from "path";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [
@@ -13,29 +13,29 @@ export default defineConfig({
   resolve: {
     alias: {
       // Alias @ to the src directory
-      '@': path.resolve(__dirname, './src'),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
   build: {
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react-router-dom') || id.includes('@remix-run') || id.includes('react-router')) {
-              return 'router';
+          if (id.includes("node_modules")) {
+            if (id.includes("react-router-dom") || id.includes("@remix-run") || id.includes("react-router")) {
+              return "router";
             }
-            if (id.includes('@supabase')) {
-              return 'supabase';
+            if (id.includes("@supabase")) {
+              return "supabase";
             }
-            if (id.includes('lucide-react')) {
-              return 'ui';
+            if (id.includes("lucide-react")) {
+              return "ui";
             }
-            if (id.includes('react-dom') || id.includes('/react/')) {
-              return 'vendor';
+            if (id.includes("react-dom") || id.includes("/react/")) {
+              return "vendor";
             }
           }
         },
       },
     },
   },
-})
+});
