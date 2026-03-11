@@ -1,8 +1,7 @@
-import { Send, TrendingUp, Newspaper, Activity, CheckCircle, AlertTriangle } from "lucide-react";
+import { TrendingUp, Newspaper, Activity, CheckCircle, AlertTriangle } from "lucide-react";
 import { useMemo } from "react";
 import { useLocaleStore } from "@/stores/locale";
 import { useAppStore } from "@/stores/app";
-import { toast } from "sonner";
 import { relativeTime } from "@/lib/utils";
 import { HEALTH_THRESHOLD_MS, MAX_RECENT_ITEMS } from "@/lib/constants";
 
@@ -23,7 +22,6 @@ export function RightSidebar() {
   const sources = useAppStore((s) => s.sources);
   const recentArticles = useAppStore((s) => s.recentArticles);
   const queryCountToday = useAppStore((s) => s.queryCountToday);
-  const currentQuery = useAppStore((s) => s.currentQuery);
   const submitQuery = useAppStore((s) => s.submitQuery);
   const closeAllPanels = useAppStore((s) => s.closeAllPanels);
   const lastIngestionTime = useAppStore((s) => s.lastIngestionTime);
@@ -34,23 +32,6 @@ export function RightSidebar() {
     () => (lastIngestionTime ? Date.now() - new Date(lastIngestionTime).getTime() < HEALTH_THRESHOLD_MS : false),
     [lastIngestionTime],
   );
-
-  const handleSendToAnalyst = () => {
-    const analysis = currentQuery?.analysis;
-    const queryText = currentQuery?.query_text ?? t.export.title;
-    const body = analysis
-      ? t.sidebar.emailBodyQuery
-          .replace("{query}", queryText)
-          .replace("{content}", analysis.content)
-          .replace("{primary}", String(analysis.primary_source_count))
-          .replace("{supporting}", String(analysis.supporting_source_count))
-          .replace("{confidence}", String(analysis.confidence))
-      : t.sidebar.emailBodyDefault
-          .replace("{sourceCount}", String(sources.length))
-          .replace("{articleCount}", String(totalArticleCount));
-    const subject = encodeURIComponent(t.sidebar.emailSubject.replace("{query}", queryText));
-    window.open(`mailto:?subject=${subject}&body=${encodeURIComponent(body)}`);
-  };
 
   const handleQuery = (text: string) => {
     closeAllPanels();
@@ -69,28 +50,6 @@ export function RightSidebar() {
   return (
     <aside className="w-full h-full border-l border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex flex-col overflow-y-auto">
       <div className="p-6">
-        {/* Send to Analyst CTA */}
-        <button
-          onClick={() => {
-            handleSendToAnalyst();
-            toast.success(t.sidebar.sendToAnalyst);
-          }}
-          className={`w-full px-4 py-3 rounded transition-colors flex items-center justify-center gap-2 mb-6 font-medium ${
-            currentQuery?.analysis
-              ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] cursor-pointer"
-              : "bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 cursor-default opacity-60"
-          }`}
-          disabled={!currentQuery?.analysis}
-          title={
-            currentQuery?.analysis
-              ? t.sidebar.sendToAnalyst
-              : (t.sidebar.noAnalysisToSend ?? "Run a query first to send results")
-          }
-        >
-          <Send className="size-4" />
-          <span>{t.sidebar.sendToAnalyst}</span>
-        </button>
-
         {/* System Health Monitor */}
         <div className="mb-8 p-4 rounded border-2 border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-950">
           <div className="flex items-center gap-2 mb-3">
