@@ -45,13 +45,15 @@ export type Database = {
         };
         Insert: Omit<Database["public"]["Tables"]["articles"]["Row"], "id" | "ingested_at">;
         Update: Partial<Database["public"]["Tables"]["articles"]["Insert"]>;
-        Relationships: [{
-          foreignKeyName: "articles_source_id_fkey";
-          columns: ["source_id"];
-          isOneToOne: false;
-          referencedRelation: "sources";
-          referencedColumns: ["id"];
-        }];
+        Relationships: [
+          {
+            foreignKeyName: "articles_source_id_fkey";
+            columns: ["source_id"];
+            isOneToOne: false;
+            referencedRelation: "sources";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       queries: {
         Row: {
@@ -77,13 +79,15 @@ export type Database = {
         };
         Insert: Omit<Database["public"]["Tables"]["analyses"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["analyses"]["Insert"]>;
-        Relationships: [{
-          foreignKeyName: "analyses_query_id_fkey";
-          columns: ["query_id"];
-          isOneToOne: false;
-          referencedRelation: "queries";
-          referencedColumns: ["id"];
-        }];
+        Relationships: [
+          {
+            foreignKeyName: "analyses_query_id_fkey";
+            columns: ["query_id"];
+            isOneToOne: false;
+            referencedRelation: "queries";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       citations: {
         Row: {
@@ -96,19 +100,22 @@ export type Database = {
         };
         Insert: Omit<Database["public"]["Tables"]["citations"]["Row"], "id">;
         Update: Partial<Database["public"]["Tables"]["citations"]["Insert"]>;
-        Relationships: [{
-          foreignKeyName: "citations_analysis_id_fkey";
-          columns: ["analysis_id"];
-          isOneToOne: false;
-          referencedRelation: "analyses";
-          referencedColumns: ["id"];
-        }, {
-          foreignKeyName: "citations_article_id_fkey";
-          columns: ["article_id"];
-          isOneToOne: false;
-          referencedRelation: "articles";
-          referencedColumns: ["id"];
-        }];
+        Relationships: [
+          {
+            foreignKeyName: "citations_analysis_id_fkey";
+            columns: ["analysis_id"];
+            isOneToOne: false;
+            referencedRelation: "analyses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "citations_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "articles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: Record<string, never>;

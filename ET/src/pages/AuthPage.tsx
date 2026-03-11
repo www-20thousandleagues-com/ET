@@ -23,9 +23,7 @@ export function AuthPage() {
     setError(null);
     setLoading(true);
 
-    const result = mode === "login"
-      ? await signIn(email, password)
-      : await signUp(email, password, fullName);
+    const result = mode === "login" ? await signIn(email, password) : await signUp(email, password, fullName);
 
     if (result.error) {
       setError(result.error);
@@ -46,12 +44,12 @@ export function AuthPage() {
             "{t.auth.tagline}"
           </blockquote>
           <div className="flex items-center gap-6 text-sm text-stone-500">
-            <span>{t.auth.sources}</span>
+            <span>{t.auth.activeSources.replace("{count}", "17")}</span>
             <span>{t.auth.dailyAnalyses}</span>
             <span>{t.auth.aiPowered}</span>
           </div>
         </div>
-        <p className="text-xs text-stone-600">Et Primaer &copy; 2026</p>
+        <p className="text-xs text-stone-600">{t.common.copyright} &copy; 2026</p>
       </div>
 
       {/* Right panel - auth form */}
@@ -126,7 +124,11 @@ export function AuthPage() {
               />
             </div>
 
-            {error && <p role="alert" className="text-sm text-[var(--brand)]">{error}</p>}
+            {error && (
+              <p role="alert" className="text-sm text-[var(--brand)]">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
@@ -147,7 +149,10 @@ export function AuthPage() {
           <p className="mt-6 text-center text-sm text-stone-600 dark:text-stone-400">
             {mode === "login" ? t.auth.noAccount : t.auth.hasAccount}{" "}
             <button
-              onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(null); }}
+              onClick={() => {
+                setMode(mode === "login" ? "signup" : "login");
+                setError(null);
+              }}
               className="font-medium text-black dark:text-white hover:underline"
             >
               {mode === "login" ? t.auth.signUp : t.auth.logIn}

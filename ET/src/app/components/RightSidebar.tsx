@@ -1,6 +1,22 @@
-import { Send, TrendingUp, Newspaper } from "lucide-react";
+import { Send, TrendingUp, Newspaper, Activity, CheckCircle, AlertTriangle } from "lucide-react";
+import { useMemo } from "react";
 import { useLocaleStore } from "@/stores/locale";
 import { useAppStore } from "@/stores/app";
+import { toast } from "sonner";
+import { relativeTime } from "@/lib/utils";
+import { HEALTH_THRESHOLD_MS, MAX_RECENT_ITEMS } from "@/lib/constants";
+
+function timeSince(dateStr: string, t: ReturnType<typeof useLocaleStore.getState>["t"]): string {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "—";
+  const diff = Date.now() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return t.time.justNow;
+  if (mins < 60) return t.time.minutesAgo.replace("{n}", String(mins));
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return t.time.hoursAgo.replace("{n}", String(hours));
+  return t.time.daysAgo.replace("{n}", String(Math.floor(hours / 24)));
+}
 
 export function RightSidebar() {
   const t = useLocaleStore((s) => s.t);
@@ -9,39 +25,107 @@ export function RightSidebar() {
   const queryCountToday = useAppStore((s) => s.queryCountToday);
   const currentQuery = useAppStore((s) => s.currentQuery);
   const submitQuery = useAppStore((s) => s.submitQuery);
+  const closeAllPanels = useAppStore((s) => s.closeAllPanels);
+  const lastIngestionTime = useAppStore((s) => s.lastIngestionTime);
+  const totalArticleCount = useAppStore((s) => s.totalArticleCount);
 
-  const totalArticles = sources.reduce((sum, s) => sum + s.article_count, 0);
+  // Health: if last ingestion was more than 2 hours ago, status is degraded
+  const isHealthy = useMemo(
+    () => (lastIngestionTime ? Date.now() - new Date(lastIngestionTime).getTime() < HEALTH_THRESHOLD_MS : false),
+    [lastIngestionTime],
+  );
 
   const handleSendToAnalyst = () => {
     const analysis = currentQuery?.analysis;
-    const queryText = currentQuery?.query_text ?? "Jaegeren Analysis";
+    const queryText = currentQuery?.query_text ?? t.export.title;
     const body = analysis
-      ? `Query: ${queryText}\n\n${analysis.content}\n\nSources: ${analysis.primary_source_count} primary, ${analysis.supporting_source_count} supporting\nConfidence: ${analysis.confidence}%`
-      : `Please review the latest intelligence briefing.\n\nSources monitored: ${sources.length}\nTotal articles: ${totalArticles}`;
-    const subject = encodeURIComponent(`Jaegeren: ${queryText}`);
+      ? t.sidebar.emailBodyQuery
+          .replace("{query}", queryText)
+          .replace("{content}", analysis.content)
+          .replace("{primary}", String(analysis.primary_source_count))
+          .replace("{supporting}", String(analysis.supporting_source_count))
+          .replace("{confidence}", String(analysis.confidence))
+      : t.sidebar.emailBodyDefault
+          .replace("{sourceCount}", String(sources.length))
+          .replace("{articleCount}", String(totalArticleCount));
+    const subject = encodeURIComponent(t.sidebar.emailSubject.replace("{query}", queryText));
     window.open(`mailto:?subject=${subject}&body=${encodeURIComponent(body)}`);
+  };
+
+  const handleQuery = (text: string) => {
+    closeAllPanels();
+    submitQuery(text);
   };
 
   // Top sources ranked by article count
   const topSources = sources
     .filter((s) => s.article_count > 0)
     .sort((a, b) => b.article_count - a.article_count)
-    .slice(0, 5);
+    .slice(0, MAX_RECENT_ITEMS);
 
   // Latest articles
-  const latestArticles = recentArticles.slice(0, 5);
+  const latestArticles = recentArticles.slice(0, MAX_RECENT_ITEMS);
 
   return (
-    <aside className="w-80 border-l border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex flex-col h-screen overflow-y-auto">
+    <aside className="w-full h-full border-l border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex flex-col overflow-y-auto">
       <div className="p-6">
         {/* Send to Analyst CTA */}
         <button
-          onClick={handleSendToAnalyst}
-          className="w-full px-4 py-3 bg-[var(--brand)] text-white rounded hover:bg-[var(--brand-hover)] transition-colors flex items-center justify-center gap-2 mb-6 font-medium"
+          onClick={() => {
+            handleSendToAnalyst();
+            toast.success(t.sidebar.sendToAnalyst);
+          }}
+          className={`w-full px-4 py-3 rounded transition-colors flex items-center justify-center gap-2 mb-6 font-medium ${
+            currentQuery?.analysis
+              ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] cursor-pointer"
+              : "bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 cursor-default opacity-60"
+          }`}
+          disabled={!currentQuery?.analysis}
+          title={
+            currentQuery?.analysis
+              ? t.sidebar.sendToAnalyst
+              : (t.sidebar.noAnalysisToSend ?? "Run a query first to send results")
+          }
         >
           <Send className="size-4" />
           <span>{t.sidebar.sendToAnalyst}</span>
         </button>
+
+        {/* System Health Monitor */}
+        <div className="mb-8 p-4 rounded border-2 border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-950">
+          <div className="flex items-center gap-2 mb-3">
+            <Activity className="size-4 text-stone-700 dark:text-stone-300" />
+            <h3 className="text-sm font-bold text-black dark:text-white">{t.sidebar.systemHealth}</h3>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-stone-600 dark:text-stone-400">{t.sidebar.pipelineStatus}</span>
+              <div className="flex items-center gap-1.5">
+                {isHealthy ? (
+                  <>
+                    <CheckCircle className="size-3 text-green-600" />
+                    <span className="text-xs font-bold text-green-600">{t.sidebar.healthy}</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="size-3 text-amber-500" />
+                    <span className="text-xs font-bold text-amber-500">{t.sidebar.degraded}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-stone-600 dark:text-stone-400">{t.sidebar.lastIngestion}</span>
+              <span className="text-xs font-bold text-black dark:text-white">
+                {lastIngestionTime ? timeSince(lastIngestionTime, t) : t.sidebar.neverRun}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-stone-600 dark:text-stone-400">{t.sidebar.vectorCount}</span>
+              <span className="text-xs font-bold text-black dark:text-white">{totalArticleCount.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
 
         {/* Latest Articles */}
         <div className="mb-8">
@@ -54,11 +138,19 @@ export function RightSidebar() {
               latestArticles.map((article) => (
                 <button
                   key={article.id}
-                  onClick={() => submitQuery(article.title)}
+                  onClick={() => handleQuery(article.title)}
                   className="w-full text-left p-3 text-sm border-2 border-stone-200 dark:border-stone-700 hover:border-black dark:hover:border-white bg-white dark:bg-stone-900 rounded transition-colors"
                 >
                   <span className="line-clamp-2 text-stone-800 dark:text-stone-200">{article.title}</span>
-                  <span className="block text-xs text-stone-500 mt-1">{article.source_name}</span>
+                  <div className="flex items-center gap-2 text-xs text-stone-500 mt-1">
+                    <span>{article.source_name}</span>
+                    {article.published_at && (
+                      <>
+                        <span>&bull;</span>
+                        <span>{relativeTime(article.published_at)}</span>
+                      </>
+                    )}
+                  </div>
                 </button>
               ))
             ) : (
@@ -77,7 +169,7 @@ export function RightSidebar() {
             {topSources.map((source) => (
               <button
                 key={source.id}
-                onClick={() => submitQuery(`Latest news from ${source.name}`)}
+                onClick={() => handleQuery(t.sidebar.latestNewsFrom.replace("{name}", source.name))}
                 className="w-full text-left p-3 rounded border-2 border-stone-200 dark:border-stone-700 hover:border-black dark:hover:border-white transition-colors flex items-center justify-between bg-white dark:bg-stone-900"
               >
                 <span className="text-sm text-stone-800 dark:text-stone-200">{source.name}</span>
@@ -100,7 +192,7 @@ export function RightSidebar() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-stone-700 dark:text-stone-300">{t.sidebar.newArticles}</span>
-              <span className="text-sm font-bold text-black dark:text-white">{totalArticles}</span>
+              <span className="text-sm font-bold text-black dark:text-white">{totalArticleCount.toLocaleString()}</span>
             </div>
           </div>
         </div>

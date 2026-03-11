@@ -49,7 +49,10 @@ export function ThemeToggle() {
                 return (
                   <button
                     key={option.value}
-                    onClick={() => { setTheme(option.value); setShowMenu(false); }}
+                    onClick={() => {
+                      setTheme(option.value);
+                      setShowMenu(false);
+                    }}
                     className="w-full text-left px-3 py-2 text-sm text-stone-900 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">

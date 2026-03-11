@@ -6,7 +6,7 @@ const flags: Record<Locale, string> = {
 };
 
 export function LanguageSwitcher() {
-  const { locale, setLocale } = useLocaleStore();
+  const { locale, setLocale, t } = useLocaleStore();
 
   const toggle = () => {
     setLocale(locale === "en" ? "da" : "en");
@@ -16,7 +16,7 @@ export function LanguageSwitcher() {
     <button
       onClick={toggle}
       className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium border border-stone-300 dark:border-stone-600 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors text-stone-700 dark:text-stone-300"
-      title={locale === "en" ? "Switch to Danish" : "Skift til engelsk"}
+      title={t.common.switchLang}
     >
       <span className="font-bold">{flags[locale]}</span>
       <span className="text-stone-400">|</span>

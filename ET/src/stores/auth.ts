@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { User, Session, Subscription } from "@supabase/supabase-js";
 import type { Profile } from "@/types/database";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 let authSubscription: Subscription | null = null;
 
@@ -41,11 +42,7 @@ type AuthState = {
 /** Fetch profile, swallowing errors so auth doesn't hang */
 async function fetchProfile(userId: string): Promise<Profile | null> {
   try {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
+    const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
     return data as Profile | null;
   } catch {
     return null;
@@ -54,10 +51,7 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
 
 /** Race a promise against a timeout — returns null on timeout */
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
-  return Promise.race([
-    promise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
-  ]);
+  return Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -67,6 +61,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   initialized: false,
 
+  /**
+   * Initializes auth state: restores session from Supabase, fetches profile, and registers
+   * an onAuthStateChange listener. Protected by a 3s hard timeout to prevent hanging.
+   */
   initialize: async () => {
     if (get().initialized) return;
 
@@ -91,7 +89,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       // Register auth state change listener for future events (sign-in, sign-out, token refresh)
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
           // Don't await — fire and forget to avoid blocking signInWithPassword
           withTimeout(fetchProfile(session.user.id), 2000).then((profile) => {
@@ -113,7 +113,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
-      const { data: { session }, error: sessionError } = sessionResult;
+      const {
+        data: { session },
+        error: sessionError,
+      } = sessionResult;
 
       // Stale/invalid token — clear and show auth page
       if (sessionError) {
@@ -132,13 +135,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ loading: false, initialized: true });
       }
     } catch (e) {
-      console.error("Auth initialization error:", e);
+      logger.error("Auth initialization error", { error: e instanceof Error ? e.message : String(e) });
       set({ user: null, session: null, profile: null, loading: false, initialized: true });
     }
 
     clearTimeout(timeout);
   },
 
+  /** Signs in with email/password. Returns a sanitized error message on failure to avoid leaking internals. */
   signIn: async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: sanitizeAuthError(error.message) };
@@ -150,6 +154,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return { error: null };
   },
 
+  /** Creates a new account and auto-signs in if email verification is disabled. Returns sanitized errors. */
   signUp: async (email, password, fullName) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -171,7 +176,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       authSubscription.unsubscribe();
       authSubscription = null;
     }
-    await supabase.auth.signOut().catch((e) => console.error("Sign-out error:", e));
+    await supabase.auth
+      .signOut()
+      .catch((e) => logger.error("Sign-out error", { error: e instanceof Error ? e.message : String(e) }));
     set({ user: null, session: null, profile: null });
     // Reset app store to clear user-scoped data
     const { useAppStore } = await import("@/stores/app");

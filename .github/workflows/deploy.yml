@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: CI / Deploy
 
 on:
   push:
@@ -10,11 +10,19 @@ on:
     branches: [main]
     paths:
       - 'ET/**'
+      - '.github/workflows/deploy.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   check:
     name: Lint & Typecheck
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ET
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,19 +34,23 @@ jobs:
           cache: pnpm
           cache-dependency-path: ET/pnpm-lock.yaml
       - name: Install dependencies
-        working-directory: ET
         run: pnpm install --frozen-lockfile
       - name: Typecheck (build)
-        working-directory: ET
-        run: pnpm build
+        run: pnpm run build
       - name: Lint
-        working-directory: ET
-        run: pnpm lint || true
+        run: pnpm run lint
+      - name: Test
+        run: pnpm run test
+      - name: Format check
+        run: pnpm run format:check
 
-  build:
-    name: Build
+  e2e:
+    name: Playwright E2E
     needs: check
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ET
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -49,11 +61,47 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: ET/pnpm-lock.yaml
-      - name: Install and build
-        working-directory: ET
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+      - name: Build app
+        run: pnpm run build
+      - name: Run E2E tests
         run: |
-          pnpm install --frozen-lockfile
-          pnpm build
+          npx vite preview --port 3000 &
+          for i in $(seq 1 30); do curl -s http://localhost:3000 > /dev/null && break || sleep 1; done
+          PLAYWRIGHT_BASE_URL=http://localhost:3000 pnpm run e2e
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: ET/playwright-report/
+          retention-days: 14
+
+  build:
+    name: Build Docker image
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ET
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: ET/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build
 
   deploy:
     name: Deploy to Production
