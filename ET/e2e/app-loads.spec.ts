@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 
+// Security/cache header tests require a production reverse-proxy (nginx).
+// They are skipped when running against the default Vite dev server.
+const hasProductionUrl = !!process.env.PLAYWRIGHT_BASE_URL;
+
 test.describe("App Loading", () => {
   test("should load the login page", async ({ page }) => {
     await page.goto("/auth");
@@ -15,6 +19,7 @@ test.describe("App Loading", () => {
   });
 
   test("should have proper security headers", async ({ page }) => {
+    test.skip(!hasProductionUrl, "Security headers are set by nginx, not the dev server");
     const response = await page.goto("/");
     expect(response).not.toBeNull();
     const headers = response!.headers();
@@ -23,6 +28,7 @@ test.describe("App Loading", () => {
   });
 
   test("should serve static assets with cache headers", async ({ page }) => {
+    test.skip(!hasProductionUrl, "Cache headers are set by nginx, not the dev server");
     await page.goto("/");
     // Check that CSS/JS assets have cache headers
     const responses: { url: string; cacheControl: string }[] = [];
