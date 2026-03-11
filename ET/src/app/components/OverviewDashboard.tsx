@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useAppStore } from "@/stores/app";
 import { useSettingsStore } from "@/stores/settings";
 import { useLocaleStore } from "@/stores/locale";
-import { safeFormatDate } from "@/lib/utils";
+import { relativeTime } from "@/lib/utils";
 import { MAX_TOPIC_ARTICLES, MAX_RECENT_STORIES, MAX_SOURCE_STORIES } from "@/lib/constants";
 
 function isSafeUrl(url: string): boolean {
@@ -134,7 +134,7 @@ export function OverviewDashboard() {
                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span>{article.source_name}</span>
                           <span>&bull;</span>
-                          <span>{safeFormatDate(article.published_at)}</span>
+                          <span>{relativeTime(article.published_at)}</span>
                           {articleLenses.map((lens) => (
                             <span
                               key={lens}
@@ -188,7 +188,7 @@ export function OverviewDashboard() {
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <span>{article.source_name}</span>
                         <span>&bull;</span>
-                        <span>{safeFormatDate(article.published_at)}</span>
+                        <span>{relativeTime(article.published_at)}</span>
                         {articleLenses.map((lens) => (
                           <span
                             key={lens}

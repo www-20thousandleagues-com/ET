@@ -10,6 +10,7 @@ import { SettingsModal } from "@/app/components/SettingsModal";
 import { useAppStore } from "@/stores/app";
 import { useSettingsStore } from "@/stores/settings";
 import { useLocaleStore } from "@/stores/locale";
+import { buildMarkdownExport, downloadFile } from "@/app/components/answer/ExportMenu";
 import {
   useSources,
   useRecentArticles,
@@ -63,16 +64,42 @@ export function DashboardPage() {
     }
   }, [systemHealth]);
 
+  const toggleSaveQuery = useAppStore((s) => s.toggleSaveQuery);
+  const currentQuery = useAppStore((s) => s.currentQuery);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         clearError();
         closeAllPanels();
       }
+      // Cmd/Ctrl+S to save current query
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        if (currentQuery) {
+          toggleSaveQuery(currentQuery.id);
+        }
+      }
+      // Cmd/Ctrl+E to export current analysis as markdown
+      if ((e.metaKey || e.ctrlKey) && e.key === "e") {
+        e.preventDefault();
+        if (currentQuery?.analysis) {
+          const localeT = useLocaleStore.getState().t;
+          const citations = (currentQuery.analysis.citations ?? []).map((c) => ({
+            position: c.position,
+            title: c.title,
+            source: c.source_name,
+            url: c.url,
+            excerpt: c.excerpt,
+          }));
+          const md = buildMarkdownExport(currentQuery.query_text, currentQuery.analysis.content, citations, localeT);
+          downloadFile(md, `jaegeren-analysis-${Date.now()}.md`, "text/markdown");
+        }
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [clearError, closeAllPanels]);
+  }, [clearError, closeAllPanels, currentQuery, toggleSaveQuery]);
 
   return (
     <div className="flex h-screen bg-white dark:bg-stone-950 overflow-hidden">
@@ -83,8 +110,8 @@ export function DashboardPage() {
         {t.common.skipToContent}
       </a>
 
-      {/* Mobile header */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 lg:hidden">
+      {/* Mobile header — z-50 to stay above everything */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 lg:hidden">
         <button
           onClick={toggleLeftNav}
           className="p-2 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
@@ -114,18 +141,19 @@ export function DashboardPage() {
         </button>
       </div>
 
-      {/* Mobile overlay */}
+      {/* Mobile overlay — dims background, z-40 (below header z-50, above content) */}
       {(leftNavOpen || rightSidebarOpen) && (
-        <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={closeAllPanels} />
+        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={closeAllPanels} aria-hidden="true" />
       )}
 
-      {/* Left nav — always visible on desktop, slide-in on mobile */}
+      {/* Left nav — desktop: static in flex flow. Mobile: fixed slide-in at z-45 */}
       <div
         className={`
-        fixed top-14 bottom-0 left-0 z-30 w-72 transform transition-transform duration-200 ease-in-out
-        lg:relative lg:top-0 lg:translate-x-0 lg:w-64 lg:z-0
-        ${leftNavOpen ? "translate-x-0" : "-translate-x-full"}
-      `}
+          fixed top-[3.25rem] bottom-0 left-0 z-[45] w-72 bg-white dark:bg-stone-950
+          transform transition-transform duration-200 ease-in-out
+          lg:static lg:z-0 lg:w-64 lg:transform-none lg:transition-none
+          ${leftNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}
       >
         <SectionErrorBoundary>
           <LeftNav />
@@ -133,7 +161,7 @@ export function DashboardPage() {
       </div>
 
       {/* Main content */}
-      <main id="main-content" className="flex-1 flex flex-col min-w-0 pt-14 lg:pt-0">
+      <main id="main-content" className="flex-1 flex flex-col min-w-0 pt-[3.25rem] lg:pt-0">
         <SectionErrorBoundary>
           <SourceStrip />
         </SectionErrorBoundary>
@@ -145,13 +173,14 @@ export function DashboardPage() {
         </SectionErrorBoundary>
       </main>
 
-      {/* Right sidebar — always visible on xl+, slide-in on smaller */}
+      {/* Right sidebar — desktop (xl+): static in flex flow. Smaller: fixed slide-in at z-45 */}
       <div
         className={`
-        fixed top-14 bottom-0 right-0 z-30 w-80 transform transition-transform duration-200 ease-in-out
-        xl:relative xl:top-0 xl:translate-x-0 xl:z-0
-        ${rightSidebarOpen ? "translate-x-0" : "translate-x-full xl:translate-x-0"}
-      `}
+          fixed top-[3.25rem] bottom-0 right-0 z-[45] w-80 bg-white dark:bg-stone-900
+          transform transition-transform duration-200 ease-in-out
+          xl:static xl:z-0 xl:transform-none xl:transition-none
+          ${rightSidebarOpen ? "translate-x-0" : "translate-x-full xl:translate-x-0"}
+        `}
       >
         <SectionErrorBoundary>
           <RightSidebar />

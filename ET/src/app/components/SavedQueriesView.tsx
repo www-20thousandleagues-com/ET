@@ -2,6 +2,7 @@ import { Bookmark, ArrowLeft, Search, Trash2 } from "lucide-react";
 import { useAppStore } from "@/stores/app";
 import { useLocaleStore } from "@/stores/locale";
 import { safeFormatDate } from "@/lib/utils";
+import { useSavedQueries } from "@/hooks/useQueries";
 
 export function SavedQueriesView({ onClose }: { onClose: () => void }) {
   const recentQueries = useAppStore((s) => s.recentQueries);
@@ -9,7 +10,14 @@ export function SavedQueriesView({ onClose }: { onClose: () => void }) {
   const toggleSaveQuery = useAppStore((s) => s.toggleSaveQuery);
   const t = useLocaleStore((s) => s.t);
 
-  const savedQueries = recentQueries.filter((q) => q.is_saved);
+  // Use dedicated saved queries fetch (covers all saved, not just recent window)
+  const { data: savedQueriesData } = useSavedQueries();
+
+  // Merge: use full query objects from recentQueries where available, fall back to saved data
+  const savedQueries = (savedQueriesData ?? []).map((sq) => {
+    const full = recentQueries.find((q) => q.id === sq.id);
+    return full ?? { ...sq, user_id: "", analysis: null, webResults: [] };
+  });
 
   return (
     <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">

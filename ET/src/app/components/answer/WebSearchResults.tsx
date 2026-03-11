@@ -1,5 +1,5 @@
 import { ExternalLink, Globe } from "lucide-react";
-import { safeFormatDate } from "@/lib/utils";
+import { relativeTime } from "@/lib/utils";
 import type { WebResult } from "@/types/database";
 import type { Translations } from "@/lib/i18n/en";
 
@@ -39,10 +39,10 @@ export function WebSearchResults({ results, t }: WebSearchResultsProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold text-foreground bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded">
-                    {t.answer.web}
+                    {r.source || t.answer.web}
                   </span>
                   {r.published_date && (
-                    <span className="text-xs text-muted-foreground">{safeFormatDate(r.published_date)}</span>
+                    <span className="text-xs text-muted-foreground">{relativeTime(r.published_date)}</span>
                   )}
                 </div>
                 <h4 className="text-sm font-medium text-foreground mb-1 group-hover:text-brand transition-colors">

@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useLocaleStore } from "@/stores/locale";
 import { useAppStore } from "@/stores/app";
 import { useSettingsStore } from "@/stores/settings";
+import { useSavedQueries } from "@/hooks/useQueries";
 import { MAX_TITLE_LENGTH, MAX_RECENT_ITEMS, MAX_RECENT_QUERIES_DISPLAY } from "@/lib/constants";
 
 export function LeftNav() {
@@ -21,7 +22,9 @@ export function LeftNav() {
   const setShowSavedQueries = useAppStore((s) => s.setShowSavedQueries);
   const openSettings = useSettingsStore((s) => s.openSettings);
 
-  const savedQueries = recentQueries.filter((q) => q.is_saved).slice(0, MAX_RECENT_QUERIES_DISPLAY);
+  // Fetch saved queries directly from Supabase (not just filtering recent window)
+  const { data: savedQueriesData } = useSavedQueries();
+  const savedQueries = (savedQueriesData ?? []).slice(0, MAX_RECENT_QUERIES_DISPLAY);
   const recentQueryItems = recentQueries.slice(0, MAX_RECENT_QUERIES_DISPLAY);
   const recentArticleItems = recentArticles.slice(0, MAX_RECENT_ITEMS);
   const activeSources = sources.filter((s) => s.article_count > 0);
@@ -37,7 +40,7 @@ export function LeftNav() {
   };
 
   return (
-    <aside className="w-full h-screen border-r border-stone-200 dark:border-stone-800 bg-background flex flex-col">
+    <aside className="w-full h-full border-r border-stone-200 dark:border-stone-800 bg-background flex flex-col">
       <div className="p-6 border-b border-stone-200 dark:border-stone-800">
         <button
           onClick={() => {

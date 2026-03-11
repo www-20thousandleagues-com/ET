@@ -1,4 +1,5 @@
 {
+  "id": "B4eeFuBI0ZJFgBTM",
   "name": "Jaegeren RAG Query Pipeline",
   "nodes": [
     {
@@ -76,7 +77,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, messages: [{ role: 'user', content: `You are Jaegeren, a geo-economic intelligence analyst. Synthesize a clear, concise analysis based on the following sources. Reference sources using [1], [2], etc. Write in English. Be analytical and factual.\\n\\nQuery: ${$json.query_text}\\n\\nSources:\\n${$json.context}\\n\\nProvide a 2-3 paragraph analysis addressing the query, citing sources inline.` }] }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, messages: [{ role: 'user', content: `Synthesize a clear, concise analysis based on the following sources. Reference sources using [1], [2], etc. Write in English. Be analytical, factual, and neutral. Do not introduce yourself, frame the analysis from any particular perspective, or use phrases like \"from a geopolitical intelligence perspective\". Present findings directly.\\n\\nQuery: ${$json.query_text}\\n\\nSources:\\n${$json.context}\\n\\nProvide a 2-3 paragraph analysis addressing the query, citing sources inline.` }] }) }}",
         "options": {
           "response": {
             "response": {

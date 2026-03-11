@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useLocaleStore } from "@/stores/locale";
 import { useAppStore } from "@/stores/app";
 import { toast } from "sonner";
+import { relativeTime } from "@/lib/utils";
 import { HEALTH_THRESHOLD_MS, MAX_RECENT_ITEMS } from "@/lib/constants";
 
 function timeSince(dateStr: string, t: ReturnType<typeof useLocaleStore.getState>["t"]): string {
@@ -66,7 +67,7 @@ export function RightSidebar() {
   const latestArticles = recentArticles.slice(0, MAX_RECENT_ITEMS);
 
   return (
-    <aside className="w-full h-screen border-l border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex flex-col overflow-y-auto">
+    <aside className="w-full h-full border-l border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex flex-col overflow-y-auto">
       <div className="p-6">
         {/* Send to Analyst CTA */}
         <button
@@ -76,10 +77,15 @@ export function RightSidebar() {
           }}
           className={`w-full px-4 py-3 rounded transition-colors flex items-center justify-center gap-2 mb-6 font-medium ${
             currentQuery?.analysis
-              ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]"
-              : "bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-300 dark:hover:bg-stone-600"
+              ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] cursor-pointer"
+              : "bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 cursor-default opacity-60"
           }`}
-          title={currentQuery?.analysis ? t.sidebar.sendToAnalyst : t.sidebar.emailBodyDefault.split("\n")[0]}
+          disabled={!currentQuery?.analysis}
+          title={
+            currentQuery?.analysis
+              ? t.sidebar.sendToAnalyst
+              : (t.sidebar.noAnalysisToSend ?? "Run a query first to send results")
+          }
         >
           <Send className="size-4" />
           <span>{t.sidebar.sendToAnalyst}</span>
@@ -136,7 +142,15 @@ export function RightSidebar() {
                   className="w-full text-left p-3 text-sm border-2 border-stone-200 dark:border-stone-700 hover:border-black dark:hover:border-white bg-white dark:bg-stone-900 rounded transition-colors"
                 >
                   <span className="line-clamp-2 text-stone-800 dark:text-stone-200">{article.title}</span>
-                  <span className="block text-xs text-stone-500 mt-1">{article.source_name}</span>
+                  <div className="flex items-center gap-2 text-xs text-stone-500 mt-1">
+                    <span>{article.source_name}</span>
+                    {article.published_at && (
+                      <>
+                        <span>&bull;</span>
+                        <span>{relativeTime(article.published_at)}</span>
+                      </>
+                    )}
+                  </div>
                 </button>
               ))
             ) : (

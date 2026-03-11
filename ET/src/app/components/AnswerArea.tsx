@@ -5,7 +5,13 @@ import { useLocaleStore } from "@/stores/locale";
 import { safeFormatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSettingsStore } from "@/stores/settings";
-import { STREAMING_CHUNK_SIZE, STREAMING_INTERVAL_MS } from "@/lib/constants";
+import {
+  STREAMING_CHUNK_SIZE,
+  STREAMING_INTERVAL_MS,
+  COPIED_FEEDBACK_MS,
+  URL_REVOKE_DELAY_MS,
+  ERROR_AUTO_DISMISS_MS,
+} from "@/lib/constants";
 import { OverviewDashboard } from "@/app/components/OverviewDashboard";
 import { SavedQueriesView } from "@/app/components/SavedQueriesView";
 import { CitationContent } from "@/app/components/answer/CitationContent";
@@ -108,6 +114,13 @@ export function AnswerArea() {
     setFeedback(null);
   }, [currentQuery?.id]);
 
+  // Auto-dismiss error after 15 seconds
+  useEffect(() => {
+    if (!queryError) return;
+    const timer = setTimeout(() => goHome(), ERROR_AUTO_DISMISS_MS);
+    return () => clearTimeout(timer);
+  }, [queryError, goHome]);
+
   const analysis = currentQuery?.analysis;
   const allCitations = useMemo(() => analysis?.citations ?? [], [analysis?.citations]);
 
@@ -168,13 +181,13 @@ export function AnswerArea() {
       setCopied(true);
       toast.success(t.common.copied);
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS);
     } catch {
       const blob = new Blob([text], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const w = window.open(url, "_blank");
       if (w) {
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setTimeout(() => URL.revokeObjectURL(url), URL_REVOKE_DELAY_MS);
       }
     }
   }, [analysis, citationData, t]);

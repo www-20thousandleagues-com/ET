@@ -138,6 +138,30 @@ export function useRecentQueries() {
   });
 }
 
+// ── Saved queries ─────────────────────────────────────────────────────────
+
+/** Fetch queries where is_saved=true for the current user (independent of recent window). */
+export function useSavedQueries() {
+  const user = useAuthStore((s) => s.user);
+
+  return useQuery({
+    queryKey: ["savedQueries", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("queries")
+        .select("id, query_text, is_saved, created_at")
+        .eq("user_id", user.id)
+        .eq("is_saved", true)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as { id: string; query_text: string; is_saved: boolean; created_at: string }[];
+    },
+    enabled: !!user,
+  });
+}
+
 // ── Query count today ──────────────────────────────────────────────────────
 
 /** Fetch today's query count for the current user (mirrors querySlice.fetchQueryCountToday). */

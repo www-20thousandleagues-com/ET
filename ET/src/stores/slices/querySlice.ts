@@ -172,7 +172,12 @@ export const createQuerySlice: StateCreator<AppState, [], [], QuerySlice> = (set
     // Save query to Supabase (must complete before analysis insert)
     const user = useAuthStore.getState().user;
     if (user) {
-      await supabase.from("queries").insert({ id: queryId, query_text: trimmed, user_id: user.id, is_saved: false });
+      const { error: insertError } = await supabase
+        .from("queries")
+        .insert({ id: queryId, query_text: trimmed, user_id: user.id, is_saved: false });
+      if (insertError) {
+        logger.error("Failed to save query", { error: insertError.message });
+      }
     }
 
     // Call n8n RAG pipeline + Web Search in parallel
