@@ -17,6 +17,7 @@ const queryClient = new QueryClient({
   },
 });
 
+const LandingPage = lazy(() => import("@/pages/LandingPage").then((m) => ({ default: m.LandingPage })));
 const AuthPage = lazy(() => import("@/pages/AuthPage").then((m) => ({ default: m.AuthPage })));
 const DashboardPage = lazy(() => import("@/pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
 
@@ -84,9 +85,10 @@ export default function App() {
           <BrowserRouter>
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route
-                  path="/"
+                  path="/dashboard"
                   element={
                     <ProtectedRoute>
                       <DashboardPage />
