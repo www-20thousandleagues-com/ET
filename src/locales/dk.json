@@ -1,0 +1,59 @@
+{
+  "common": {
+    "loading": "Indlæser...",
+    "error": "Fejl"
+  },
+  "nav": {
+    "daily_scan": "Daglig Scanning",
+    "saved_queries": "Gemte Søgninger",
+    "sources": "Kilder",
+    "org_settings": "Org. Indstillinger",
+    "personal_settings": "Personlige Indstillinger",
+    "theme": "Tema"
+  },
+  "hud": {
+    "active_ingestion": "Aktiv Indsamling",
+    "sources_monitored": "Overvågede Kilder",
+    "update_cycle": "Opdateringscyklus",
+    "analysis_engine": "Analysemotor",
+    "global_coverage": "Global Dækning",
+    "automated": "Automatiseret",
+    "hours": "timer"
+  },
+  "prompt": {
+    "search_macro": "Søg i strømmen eller instruér Hunter i at syntetisere et nyt emne...",
+    "search_micro": "Hvad er de seneste EU-sanktioner mod russisk energiimport?"
+  },
+  "feed": {
+    "triage_feed": "Prioriteringsstrøm",
+    "live_output": "LIVE OUTPUT",
+    "parking_lot": "Parkeringsplads",
+    "auto_expires": "Udløber automatisk",
+    "min_confidence": "MIN. TILLID",
+    "force_compact": "TVING KOMPAKT",
+    "hide_read": "SKJUL LÆSTE",
+    "active_feeds": "Aktive strømme"
+  },
+  "analysis": {
+    "title": "Analyse",
+    "confidence": "Tillid",
+    "sources": "Kilder",
+    "quotes_and_sources": "Citater & Kilder",
+    "signal_strength": "Signalstyrke",
+    "filter_all": "Alle Kilder",
+    "sort_relevance": "Relevans",
+    "sort_date": "Dato",
+    "sort_source": "Kilde"
+  },
+  "settings": {
+    "title": "Personlige Indstillinger",
+    "language": "Sprog",
+    "english": "Engelsk",
+    "danish": "Dansk",
+    "preferences": "Præferencer",
+    "theme": "Temagrænseflade",
+    "dark": "Mørk Tilstand",
+    "light": "Lys Tilstand",
+    "auto": "Systemstandard"
+  }
+}

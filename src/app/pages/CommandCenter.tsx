@@ -6,8 +6,10 @@ import { TriageCard } from "@/app/components/TriageCard";
 import { ParkingLot, BookmarkedItem } from "@/app/components/ParkingLot";
 import { OmniPromptBar } from "@/app/components/OmniPromptBar";
 import { MOCK_TRIAGE_DATA } from "@/app/data/mockTriageData";
+import { useTranslation } from "react-i18next";
 
 export function CommandCenter() {
+  const { t } = useTranslation();
   const [confidenceThreshold, setConfidenceThreshold] = useState(0);
   const [isCompactMode, setIsCompactMode] = useState(false);
 
@@ -72,9 +74,9 @@ export function CommandCenter() {
           
           <div className="mb-6 flex items-end justify-between border-b border-stone-200 dark:border-stone-800 pb-2">
             <h1 className="text-2xl font-black text-stone-900 dark:text-stone-100 tracking-tighter uppercase">
-              Triage Feed <span className="text-[#E94E3D] ml-2">{filteredData.length}</span>
+              {t('feed.triage_feed')} <span className="text-[#E94E3D] ml-2">{filteredData.length}</span>
             </h1>
-            <span className="text-xs font-mono text-stone-500 uppercase">Live Output</span>
+            <span className="text-xs font-mono text-stone-500 uppercase">{t('feed.live_output')}</span>
           </div>
 
           {/* Dynamic Grid / Flex Layout */}

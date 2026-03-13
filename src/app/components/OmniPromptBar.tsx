@@ -1,6 +1,7 @@
 import { Search, Sparkles, Command } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export function OmniPromptBar() {
   const [query, setQuery] = useState("");
@@ -11,10 +12,11 @@ export function OmniPromptBar() {
 
   // Determine context
   const isFrontPage = location.pathname === "/";
+  const { t } = useTranslation();
   
   const placeholderText = isFrontPage 
-    ? "Search the firehose or instruct the Hunter to synthesize a new topic..." 
-    : "Ask a follow-up or refine this analysis...";
+    ? t('prompt.search_macro')
+    : t('prompt.search_micro');
 
   // Keyboard shortcut: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
   useEffect(() => {
@@ -44,10 +46,10 @@ export function OmniPromptBar() {
   };
 
   return (
-    <div className="border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-[#0a0a0b] p-4 md:p-6 lg:p-8">
+    <div className="bg-[#0f1011] p-4 md:p-6 lg:p-8">
       <div className="max-w-[1800px] mx-auto">
         <form onSubmit={handleSubmit} className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-stone-400 dark:text-stone-500 group-focus-within:text-[#E94E3D] transition-colors" />
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 size-5 text-[#5F5F5F] group-focus-within:text-[#ef4444] transition-colors" />
           
           <input
             ref={inputRef}
@@ -55,18 +57,17 @@ export function OmniPromptBar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholderText}
-            className="w-full pl-12 pr-24 py-4 text-base border-2 border-stone-300 dark:border-stone-800 bg-stone-50 dark:bg-[#111112] text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 rounded focus:outline-none focus:border-[#E94E3D] dark:focus:border-[#E94E3D] transition-all shadow-sm focus:shadow-[0_0_15px_rgba(233,78,61,0.15)]"
+            className="w-full pl-14 pr-24 py-5 text-[15px] outline-none bg-[#0a0a0b] text-white placeholder:text-[#5F5F5F] border border-[#1C1C1D] shadow-sm rounded-lg focus:border-[#ef4444] transition-all focus:shadow-[0_0_15px_rgba(239,68,68,0.1)]"
           />
           
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <kbd className="hidden sm:flex items-center gap-1 px-2 py-1 text-xs text-stone-500 dark:text-stone-500 bg-white dark:bg-black rounded border border-stone-200 dark:border-stone-800 font-mono">
-              <Command className="size-3" />
-              <span>K</span>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <kbd className="hidden sm:flex items-center justify-center h-7 px-2 text-[10px] text-[#5F5F5F] font-bold bg-[#111112] rounded border border-[#1C1C1D] font-mono">
+              CMD + K
             </kbd>
             <button 
               type="submit"
               disabled={!query.trim()}
-              className="p-2 bg-stone-200 dark:bg-stone-800 hover:bg-[#E94E3D] hover:text-white dark:text-stone-400 disabled:opacity-50 disabled:hover:bg-stone-200 disabled:dark:hover:bg-stone-800 disabled:text-stone-400 text-stone-600 rounded transition-all"
+              className="w-8 h-8 flex items-center justify-center bg-[#ef4444] hover:bg-[#dc2626] disabled:opacity-50 disabled:bg-[#1C1C1D] text-white rounded transition-all"
             >
               <Sparkles className="size-4" />
             </button>

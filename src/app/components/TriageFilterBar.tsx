@@ -1,4 +1,5 @@
 import { SlidersHorizontal, EyeOff, LayoutList } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface TriageFilterBarProps {
   confidenceThreshold: number;
@@ -13,13 +14,14 @@ export function TriageFilterBar({
   isCompactMode, 
   setIsCompactMode 
 }: TriageFilterBarProps) {
+  const { t } = useTranslation();
   return (
     <div className="bg-stone-50 dark:bg-[#0a0a0b] border-b border-stone-200 dark:border-stone-800 sticky top-0 z-20 shadow-sm py-2 px-4 flex items-center justify-between flex-wrap gap-4">
       
       {/* Confidence Slider */}
       <div className="flex items-center gap-3">
         <div className="text-[11px] font-bold uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
-          <SlidersHorizontal className="size-3.5" /> Minimum Confidence
+          <SlidersHorizontal className="size-3.5" /> {t('feed.min_confidence')}
         </div>
         
         <div className="flex items-center gap-2">
@@ -42,7 +44,7 @@ export function TriageFilterBar({
         {/* Triage View / Compact Toggle */}
         <label className="flex items-center gap-2 cursor-pointer group">
           <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-colors flex items-center gap-1">
-            <LayoutList className="size-3" /> Force Compact
+            <LayoutList className="size-3" /> {t('feed.force_compact')}
           </span>
           <div className="relative">
              <input 
@@ -57,7 +59,7 @@ export function TriageFilterBar({
         </label>
         
         <button className="text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 flex items-center gap-1 transition-colors">
-          <EyeOff className="size-3" /> Hide Read
+          <EyeOff className="size-3" /> {t('feed.hide_read')}
         </button>
       </div>
 

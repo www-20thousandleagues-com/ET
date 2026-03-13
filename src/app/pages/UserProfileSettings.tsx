@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { Camera, X, Upload, CheckCircle2, Mail, ShieldAlert } from 'lucide-react';
+import { Camera, X, Upload, CheckCircle2, Mail, ShieldAlert, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
   return centerCrop(
@@ -118,6 +119,14 @@ export function UserProfileSettings() {
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  const { t, i18n } = useTranslation();
+
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem('user_locale', lang);
+    console.log(`[API Mock] PATCH /api/v1/user/preferences -> { user_locale: "${lang}" }`);
+  };
 
   // Preference State
   const [topics, setTopics] = useState<string[]>(['Makroøkonomi', 'Geopolitik']);
@@ -241,6 +250,47 @@ export function UserProfileSettings() {
               </svg>
               Forbind med Microsoft
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Application Preferences */}
+      <section className="space-y-6 pt-6 border-t border-stone-200 dark:border-stone-800">
+        <div>
+          <h3 className="text-base font-medium text-stone-900 dark:text-stone-100 flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            {t('settings.preferences')}
+          </h3>
+          <p className="text-sm text-stone-500 mb-4">
+            Vælg dit foretrukne sprog for brugergrænsefladen og AI-syntesen.
+          </p>
+          
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-stone-700 dark:text-stone-300 w-24">
+              {t('settings.language')}
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleLanguageChange('en')}
+                className={`px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
+                  i18n.language === 'en'
+                    ? 'border-stone-900 bg-stone-900 text-white dark:border-white dark:bg-white dark:text-black'
+                    : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800'
+                }`}
+              >
+                {t('settings.english')}
+              </button>
+              <button
+                onClick={() => handleLanguageChange('dk')}
+                className={`px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
+                  i18n.language === 'dk'
+                    ? 'border-stone-900 bg-stone-900 text-white dark:border-white dark:bg-white dark:text-black'
+                    : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800'
+                }`}
+              >
+                {t('settings.danish')}
+              </button>
+            </div>
           </div>
         </div>
       </section>

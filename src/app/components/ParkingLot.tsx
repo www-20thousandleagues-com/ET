@@ -2,6 +2,7 @@ import { TriageData } from "@/app/data/mockTriageData";
 import { ExpirationBadge } from "@/app/components/ExpirationBadge";
 import { Bookmark, AlertCircle, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export interface BookmarkedItem extends TriageData {
   expiresAt: string;
@@ -13,13 +14,14 @@ interface ParkingLotProps {
 }
 
 export function ParkingLot({ items, onRemove }: ParkingLotProps) {
+  const { t } = useTranslation();
   if (items.length === 0) {
     return (
       <div className="shrink-0 bg-stone-50 dark:bg-[#111112] border-b border-dashed border-stone-300 dark:border-stone-700 transition-all duration-300">
         <div className="px-4 py-2 flex items-center justify-between opacity-50">
           <h2 className="text-[10px] font-bold uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
             <Bookmark className="size-3" />
-            Parking Lot <span className="text-stone-400">({0})</span>
+            {t('feed.parking_lot')} <span className="text-stone-400">({0})</span>
           </h2>
           <span className="text-[9px] uppercase tracking-widest text-stone-500">
             Pin stories to save them here
@@ -36,10 +38,10 @@ export function ParkingLot({ items, onRemove }: ParkingLotProps) {
       <div className="px-4 py-2 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between bg-white/50 dark:bg-black/20">
         <h2 className="text-[10px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400 flex items-center gap-1.5">
           <Bookmark className="size-3" />
-          Parking Lot <span className="text-stone-400 dark:text-stone-600">({items.length})</span>
+          {t('feed.parking_lot')} <span className="text-stone-400 dark:text-stone-600">({items.length})</span>
         </h2>
         <span className="text-[9px] uppercase font-bold tracking-widest text-amber-600 dark:text-amber-500 flex items-center gap-1">
-          <AlertCircle className="size-3" /> Auto-expires
+          <AlertCircle className="size-3" /> {t('feed.auto_expires')}
         </span>
       </div>
 

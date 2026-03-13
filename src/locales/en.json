@@ -1,0 +1,59 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error"
+  },
+  "nav": {
+    "daily_scan": "Daily Scan",
+    "saved_queries": "Saved Queries",
+    "sources": "Sources",
+    "org_settings": "Org. Settings",
+    "personal_settings": "Personal Settings",
+    "theme": "Theme"
+  },
+  "hud": {
+    "active_ingestion": "Active Ingestion",
+    "sources_monitored": "Monitored Sources",
+    "update_cycle": "Update Cycle",
+    "analysis_engine": "Analysis Engine",
+    "global_coverage": "Global Coverage",
+    "automated": "Automated",
+    "hours": "hours"
+  },
+  "prompt": {
+    "search_macro": "Search the firehose or instruct the Hunter to synthesize a new topic...",
+    "search_micro": "Ask a follow-up or refine this analysis..."
+  },
+  "feed": {
+    "triage_feed": "Triage Feed",
+    "live_output": "LIVE OUTPUT",
+    "parking_lot": "Parking Lot",
+    "auto_expires": "AUTO-EXPIRES",
+    "min_confidence": "MINIMUM CONFIDENCE",
+    "force_compact": "FORCE COMPACT",
+    "hide_read": "HIDE READ",
+    "active_feeds": "Active Feeds"
+  },
+  "analysis": {
+    "title": "Analysis",
+    "confidence": "Confidence",
+    "sources": "Sources",
+    "quotes_and_sources": "Quotes & Sources",
+    "signal_strength": "Signal Strength",
+    "filter_all": "All Sources",
+    "sort_relevance": "Relevance",
+    "sort_date": "Date",
+    "sort_source": "Source"
+  },
+  "settings": {
+    "title": "Personal Settings",
+    "language": "Language",
+    "english": "English",
+    "danish": "Danish",
+    "preferences": "Preferences",
+    "theme": "Theme Interface",
+    "dark": "Dark Mode",
+    "light": "Light Mode",
+    "auto": "System Default"
+  }
+}
